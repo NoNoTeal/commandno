@@ -12,6 +12,7 @@
 "use strict";
 const Command = require('./../../Command.js');
 const Discord = require('discord.js');
+const fs = require('fs');
 const config = require('./../../../config.json');
 class reload extends Command {
     constructor(client) {
@@ -43,8 +44,8 @@ class reload extends Command {
         Command.reload(message, command);
         } else {
             try{
-                Command.globalReload(message.client, config.srcDirname);
-                Command.globalReload(message.client, 'util/essentials');
+                Command.globalReload(message.client, config.srcDirname, true);
+                Command.globalReload(message.client, 'util/essentials', true);
             message.channel.send(`Reloaded all commands.`);
             } catch (e) {console.error(e); message.channel.send(`An error has occurred. Check \`console\` for details.`)}
         }

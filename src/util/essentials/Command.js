@@ -527,11 +527,14 @@ class Command {
      * Fetches all commands and validates names.
      * @param {Discord.Client} bot 
      * @param {string} d folder name
+     * @param {boolean} clearAll
      */
-    static globalReload(bot, d) {
+    static globalReload(bot, d, clearAll = false) {
     if(!fs.readdirSync(`./src/${d}/commands`)) return;
-    bot.path.load.clear();
-    bot.path.filename.clear();
+    if(clearAll) {
+        bot.path.load.clear();
+        bot.path.filename.clear();
+    }
     function find(arr1, arr2) { 
         return arr1.some(r=> arr2.indexOf(r) >= 0);
     }
@@ -544,12 +547,11 @@ class Command {
           if (fs.statSync(dirPath + "/" + file).isDirectory()) {
             arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles)
           } else {
-            if(fs.readdirSync(dirPath).filter(file => file.endsWith('.js') && fs.statSync(dirPath + "/" + file).isFile()).length) {
+            if(!file.endsWith('.js')) return;
+            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
             arrayOfFiles.push(dirPath + '/' + file)
-            }
           }
         })
-       
         return arrayOfFiles;
       };
       var paths = getAllFiles(`./src/${d}/commands`);
