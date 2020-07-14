@@ -3,7 +3,7 @@ var Command = require('../../../util/essentials/Command.js')
 class a extends Command {
     constructor(client) {
         super(client, {
-            name: 'tokenize',
+            name: 'hello-world',
         })
     }
     async run(message) {

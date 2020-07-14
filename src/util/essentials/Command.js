@@ -529,6 +529,9 @@ class Command {
      * @param {string} d folder name
      */
     static globalReload(bot, d) {
+    if(!fs.readdirSync(`./src/${d}/commands`)) return;
+    bot.path.load.clear();
+    bot.path.filename.clear();
     function find(arr1, arr2) { 
         return arr1.some(r=> arr2.indexOf(r) >= 0);
     }

@@ -108,9 +108,9 @@ class info extends Command {
         **[${!pkg.dependencies['discord.js'].startsWith('github') ? pkg.dependencies['discord.js'].slice(1) : 'Github Commit'}](${!pkg.dependencies['discord.js'].startsWith('github')? `https://npmjs.com/package/discord.js/v/${pkg.dependencies['discord.js'].slice(1)}` : `https://github.com/discordjs/discord.js/commit/${pkg.dependencies['discord.js'].split('#').slice(1)}`})** - Discord.JS
         **[${npmver[0]}](https://www.npmjs.com/get-npm)** - NPM`, true)
         .addField(`Process Memory`,
-       `**${sizeize((process.memoryUsage().heapTotal - process.memoryUsage().heapUsed))}** Free
+       `**${sizeize(process.memoryUsage().heapTotal)}** Total
         **${sizeize(process.memoryUsage().heapUsed)}** Used
-        **${sizeize(process.memoryUsage().heapTotal)}** Total`, true)
+        **${sizeize((process.memoryUsage().heapTotal - process.memoryUsage().heapUsed))}** Free`, true)
         .addField(`Disk Storage`, `
         **${sizeize((await si.fsSize())[0].size)}** - Total
         **${sizeize((await si.fsSize())[0].used)}** - Used

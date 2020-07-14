@@ -12,6 +12,7 @@
 "use strict";
 const Command = require('./../../Command.js');
 const Discord = require('discord.js');
+const config = require('./../../../config.json');
 class reload extends Command {
     constructor(client) {
         super(client, {
@@ -42,24 +43,9 @@ class reload extends Command {
         Command.reload(message, command);
         } else {
             try{
-            let count = 0;
-            let t = 0;
-            for(var c of message.client.path.load.array()) {
-                if(c instanceof Command) {
-                    if(c.admin) continue;
-                    t++;
-                    delete require.cache[require.resolve(message.client.path.filename.get(c.name.toLowerCase()).replace('src', '../../../..'))];
-                    message.client.path.deleted.set(c.name.toLowerCase(), c);
-                    message.client.path.load.delete(c.name.toLowerCase());
-                    c = require(message.client.path.filename.get(c.name.toLowerCase()).replace('src', '../../../..'));
-                    if(c.prototype instanceof Command) {
-                        c = new c(message.client);
-                        message.client.path.load.set(c.name.toLowerCase(), c);
-                        message.client.path.deleted.delete(c.name.toLowerCase());
-                        count++;
-                }} continue;
-            }
-            message.channel.send(`Reloaded \`${count}/${t}\` commands.`);
+                Command.globalReload(message.client, config.srcDirname);
+                Command.globalReload(message.client, 'util/essentials');
+            message.channel.send(`Reloaded all commands.`);
             } catch (e) {console.error(e); message.channel.send(`An error has occurred. Check \`console\` for details.`)}
         }
     }
