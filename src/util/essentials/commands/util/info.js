@@ -16,6 +16,7 @@ const pkg = require('./../../../../../package.json');
 const os = require('os');
 const c_p = require('child_process');
 const si = require('systeminformation');
+const { getCombinedSize, getAllFiles } = require('./../../Util');
 class info extends Command {
     constructor(client) {
         super(client, {
@@ -106,19 +107,25 @@ class info extends Command {
         .addField(`Versions`, 
         `**[${process.version.slice(1)}](https://nodejs.org/download/release/${process.version})** - Node
         **[${!pkg.dependencies['discord.js'].startsWith('github') ? pkg.dependencies['discord.js'].slice(1) : 'Github Commit'}](${!pkg.dependencies['discord.js'].startsWith('github')? `https://npmjs.com/package/discord.js/v/${pkg.dependencies['discord.js'].slice(1)}` : `https://github.com/discordjs/discord.js/commit/${pkg.dependencies['discord.js'].split('#').slice(1)}`})** - Discord.JS
-        **[${npmver[0]}](https://www.npmjs.com/get-npm)** - NPM`, true)
-        .addField(`Process Memory`,
+        **[${npmver[0]}](https://www.npmjs.com/get-npm)** - NPM
+        **${pkg.version}** - Bot`, true)
+        .addField(`Process Info`,
        `**${sizeize(process.memoryUsage().heapTotal)}** Total
         **${sizeize(process.memoryUsage().heapUsed)}** Used
-        **${sizeize((process.memoryUsage().heapTotal - process.memoryUsage().heapUsed))}** Free`, true)
+        **${sizeize((process.memoryUsage().heapTotal - process.memoryUsage().heapUsed))}** Free
+        **${sizeize(getCombinedSize(getAllFiles(`./`, null, "")))}** Node Folder`, true)
         .addField(`Disk Storage`, `
         **${sizeize((await si.fsSize())[0].size)}** - Total
         **${sizeize((await si.fsSize())[0].used)}** - Used
         **${sizeize(((await si.fsSize())[0].size - (await si.fsSize())[0].used))}** - Free
-        `,true)
+        **${(await si.diskLayout())[0].name}** - Drive Name`,true)
 
-        .addField(`Uptime`, `**${msToTime(process.uptime() * 1000)}** - Node\n**${msToTime(message.client.uptime)}** - Bot`, true)
-        .addField(`Node ID`, `**${process.pid}** - Process ID\n**${process.ppid}** - Parent Process ID`, true)
+        .addField(`Uptime`, 
+        `**${msToTime(process.uptime() * 1000)}** - Node
+        **${msToTime(message.client.uptime)}** - Bot`, true)
+        .addField(`Node.JS`, 
+        `**${process.pid}** - Process ID
+        **${process.ppid}** - Parent Process ID`, true)
         .addField(`CPU Load`, 
         `**${Math.round((await si.currentLoad()).currentload_user)}%** - User
         **${Math.round((await si.currentLoad()).currentload_system)}%** - System`, true)

@@ -1,6 +1,10 @@
 const Discord = require('discord.js');
+const fs = require('fs');
 const { owners } = require('./../config.json');
 
+/**
+ * A various collection of mostly non-D.JS related things. These functions are used in Command.js, don't delete.
+ */
 class Util {
     /**
      * @param {Discord.Client} client 
@@ -108,12 +112,12 @@ class Util {
     };
 
     /**
-     * Trunicates a string.
+     * Shortens a string.
      * @param {string} string 
      * @param {number} length 
      * @return {String}
      */
-    static trunicate(string, length) {
+    static shorten(string, length) {
         if(!isNaN(length)) {
         if(string.length > length) {
             string.slice(0, length - 3);
@@ -129,6 +133,106 @@ class Util {
      */
     static randomIntFromInterval(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
+    };
+
+    /**
+     * Sends a message if it's silent or not.
+     * @param {Discord.Message} msg 
+     * @param {String} content 
+     * @param {Boolean} silent 
+     * @param {automsg} automsg 
+     * 
+     * @typedef {[Boolean, Second]} automsg
+     *
+     */
+    static silentMessage(msg, content, silent, automsg = [null]) {
+        if(!silent) {
+            if(automsg[0]) {
+                return Util.automsg(content, msg, automsg[1]);
+            } else return msg.channel.send(content);
+        } else return;
+    };
+
+    /**
+     * Gets a layer of files.
+     * @param {String} dirPath 
+     * @param {String[]} arrayOfFiles 
+     */
+    static getLayerOfFiles(dirPath, arrayOfFiles, extension) {
+        var files = fs.readdirSync(dirPath)
+       
+        arrayOfFiles = arrayOfFiles || []
+       
+        files.forEach(function(file) {
+            if(fs.statSync(dirPath + "/" + file).isDirectory()) return;
+            if(!file.endsWith(extension || "")) return;
+            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
+            arrayOfFiles.push(dirPath + '/' + file)
+        })
+        return arrayOfFiles;
+    };
+
+    /**
+     * @param {Array} array 
+     * @param {any} value 
+     * @returns {number}
+     * @static
+     */
+    static countInArray(array, value) {
+        return array.reduce((n, x) => n + (x === value), 0);
+    }
+
+    /**
+     * Gets all files in a folder.
+     * @param {String} dirPath 
+     * @param {String[]} arrayOfFiles 
+     * @param {String} extension
+     */
+    static getAllFiles(dirPath, arrayOfFiles, extension) {
+        var files = fs.readdirSync(dirPath)
+       
+        arrayOfFiles = arrayOfFiles || []
+       
+        files.forEach(function(file) {
+          if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+            arrayOfFiles = Util.getAllFiles(dirPath + "/" + file, arrayOfFiles, extension)
+          } else {
+            if(!file.endsWith(extension || "")) return;
+            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
+            arrayOfFiles.push(dirPath + '/' + file)
+          }
+        })
+        return arrayOfFiles;
+    };
+
+    /**
+     * Adds all file sizes to get one large one.
+     * @param {String} directory 
+     */
+    static getCombinedSize(arrayOfFiles) {
+        let totalSize = 0
+
+        arrayOfFiles.forEach(function(filePath) {
+          totalSize += fs.statSync(filePath).size;
+        })
+      
+        return totalSize;
+    }
+
+    /**
+     * If variable equals undefined or null.
+     * @param {any} variable 
+     */
+    static isNull(variable) {
+        return variable == null;
+    };
+
+    /**
+     * If variable equals a boolean
+     * @param {any} variable 
+     */
+    static isBoolean(variable) {
+        return typeof variable === "boolean";
     };
 
 };

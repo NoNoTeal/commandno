@@ -12,18 +12,17 @@
 "use strict";
 const Command = require('./../../Command.js');
 const Discord = require('discord.js');
-const fs = require('fs');
-const config = require('./../../../config.json');
 class reload extends Command {
     constructor(client) {
         super(client, {
             name: 'reload',
             group: 'Util',
-            syntax: 'reload <command (aliases supported!)>',
+            syntax: 'reload <Flags: -g, -e> <command (aliases supported!) | -g: group | -e: confirm>',
             cooldown: 5,
             description: 'Reload a (or every) command',
-            details: 'Reload a command that is unloaded. Guild owners cannot do this.',
+            details: 'Reload a command that is unloaded. Guild owners cannot do this. Flag -g: Target a group. -e: Target all commands. Targeting a group or everything results in new commands being added to the bot.',
 
+            reqArgs: true,
             ownerOnly: true,
             private: true,
             admin: true,
@@ -35,20 +34,25 @@ class reload extends Command {
      * @param {Discord.Guild} guild
      */
     async run(message, args, guild) {
-        if(args.join(' ')) {
-        var path = message.client.path.deleted.get(args.join(' ').toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        var check = message.client.path.load.get(args.join(' ').toLowerCase())  || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        if(path) return message.channel.send(`Command / alias \`${args.join(' ')}\` has to be loaded.`);
-        if(!check) return message.channel.send(`Command / alias \`${args.join(' ')}\` can't be found.`);
-        var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
-        Command.reload(message, command);
-        } else {
-            try{
-                Command.globalReload(message.client, config.srcDirname, true);
-                Command.globalReload(message.client, 'util/essentials', true);
-            message.channel.send(`Reloaded all commands.`);
-            } catch (e) {console.error(e); message.channel.send(`An error has occurred. Check \`console\` for details.`)}
-        }
+
+        if(args[1]) {
+            switch(args[0].toLowerCase()) {
+                case '-g':
+                    Command.reloadGroup(message, false, args[1]);
+                break;
+                case '-e':
+                    if(args[1].toLowerCase() !== 'confirm') break;
+                    Command.reloadGroup(message, true);
+                break;
+            }
+        } else if(args[0]) {
+            var path = message.client.path.deleted.get(args[0].toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            var check = message.client.path.load.get(args[0].toLowerCase())  || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
+            if(path) return message.channel.send(`Command / alias \`${args[0]}\` has to be loaded.`);
+            if(!check) return message.channel.send(`Command / alias \`${args[0]}\` can't be found.`);
+            Command.reload(message, command);
+        } else return;
     }
 }
 module.exports = reload;

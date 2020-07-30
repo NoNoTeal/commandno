@@ -19,7 +19,7 @@ class lookup extends Command {
             group: 'Util',
             cooldown: 5,
 
-            syntax: 'lookup <user id>',
+            syntax: 'lookup <userID>',
             description: 'Lookup a Discord User',
             details: 'Lookup a Discord User by using IDs only.',
 
@@ -45,43 +45,43 @@ class lookup extends Command {
             for(var badge of flags) {
                 switch(badge) {
                     case 0:
-                        str.push('**Discord Employee**')
+                        str.push('**Discord Employee**');
                     break;
                     case 1:
-                        str.push('**Discord Partner**')
+                        str.push('**Discord Partner**');
                     break;
                     case 2:
-                        str.push('**Hypesquad Events**')
+                        str.push('**Hypesquad Events**');
                     break;
                     case 3:
-                        str.push('**Bug Hunter (Type Green)**')
+                        str.push('**Bug Hunter (Type Green)**');
                     break;
                     case 6:
-                        str.push('**House of Bravery**')
+                        str.push('**House of Bravery**');
                     break;
                     case 7:
-                        str.push('**House of Brilliance**')
+                        str.push('**House of Brilliance**');
                     break;
                     case 8:
-                        str.push('**House of Balance**')
+                        str.push('**House of Balance**');
                     break;
                     case 9:
-                        str.push('**Early Supporter**')
+                        str.push('**Early Supporter**');
                     break;
                     case 10:
-                        str.push('**Team User**')
+                        str.push('**Team User**');
                     break;
                     case 12:
-                        str.push('**Priority Message System**')
+                        str.push('**Priority Message System**');
                     break;
                     case 14:
-                        str.push('**Bug Hunter (Type Gold)**')
+                        str.push('**Bug Hunter (Type Gold)**');
                     break;
                     case 16:
-                        str.push('**Verified Bot**')
+                        str.push('**Verified Bot**');
                     break;
                     case 17:
-                        str.push('**Verified Bot Developer**')
+                        str.push('**Verified Bot Developer**');
                     break;   
                 }
             }

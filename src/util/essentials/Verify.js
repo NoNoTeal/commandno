@@ -18,36 +18,42 @@ module.exports = bot => {
       console.warn(`Bot owner list has no owners, put user IDs in ./src/util/config.json`);
     } 
     if(Array.isArray(config.prefixes)) {
-      if(config.prefixes.length > 6) throw new TypeError(`Bot cannot have more than 5 prefixes.`) 
+      if(!config.prefixes.length) throw new TypeError(`Bot cannot have no prefixes.`);
+      if(config.prefixes.length > 6) throw new TypeError(`Bot cannot have more than 5 prefixes.`);
       for(var prefix of config.prefixes) {
         if(typeof prefix !== 'string') throw new TypeError(`Prefix "${prefix}" is not a string.`);
         if(!prefix.length) throw new TypeError(`Prefix cannot be blank.`);
         if(prefix.length > 20) throw new TypeError(`Prefix "${prefix}" is too long.`);
         if(/\s/g.test(prefix)) throw new TypeError(`Prefix "${prefix}" cannot have spaces.`)
       }
-    } else throw new TypeError('Bot prefix is missing.');
+    } else throw new TypeError('Bot prefix list is missing.');
 
     console.log('Validating commands');
     if(bot.path && bot.path.load && bot.path.deleted && bot.path.filename) throw new Error('Client.path must not be in use by bot.')
       bot.path = {} 
+      bot.path.util = {};
       bot.path.load = new Discord.Collection();
       bot.path.deleted = new Discord.Collection();
       bot.path.filename = new Discord.Collection();
-    if(config.srcDirname.toLowerCase() == 'util') throw new TypeError("srcDirname for config.json cannot be named util");
-    Command.globalReload(bot, config.srcDirname);
+    if(!config.srcDirname.length) throw new TypeError("srcDirname for config.json cannot be left blank.");
+    if(config.srcDirname.toLowerCase() == 'util') throw new TypeError("srcDirname for config.json cannot be named util.");
     Command.globalReload(bot, 'util/essentials');
+    Command.globalReload(bot, config.srcDirname);
 
     console.log('Validating SQLITE files');
 
 if(!fs.existsSync(`./src/util/essentials/util-cache/GuildPrefix.sqlite`)) {
+  fs.mkdirSync(`./src/util/essentials/util-cache`, {recursive: true})
   fs.createWriteStream(`./src/util/essentials/util-cache/GuildPrefix.sqlite`, {flags: 'a+'});
   console.debug('Created file GuildPrefix.sqlite');
 };
 if(!fs.existsSync(`./src/util/essentials/util-cache/Cooldowns.sqlite`)) {
+  fs.mkdirSync(`./src/util/essentials/util-cache`, {recursive: true})
   fs.createWriteStream(`./src/util/essentials/util-cache/Cooldowns.sqlite`, {flags: 'a+'});
   console.debug('Created file Cooldowns.sqlite');
 };
 if(!fs.existsSync(`./src/util/essentials/util-cache/GuildCommands.sqlite`)) {
+  fs.mkdirSync(`./src/util/essentials/util-cache`, {recursive: true})
   fs.createWriteStream(`./src/util/essentials/util-cache/GuildCommands.sqlite`, {flags: 'a+'});
   console.debug('Created file GuildCommands.sqlite');
 };
@@ -95,11 +101,13 @@ var GuildCommandsSqlite = sqlite(`./src/util/essentials/util-cache/GuildCommands
     }
     bot.getGuildCommand = GuildCommandsSqlite.prepare("SELECT * FROM guildcommands WHERE guild = ? AND command = ?");
     bot.setGuildCommand = GuildCommandsSqlite.prepare("INSERT OR REPLACE INTO guildcommands (id, guild, command, disabled, user) VALUES (@id, @guild, @command, @disabled, @user);");
+
     console.log('Pending Ready Event')
     console.log(`---------Finished Verify.js---------`);
   bot.on('ready', () => {
     console.log(`---------Running Verify.js (Ready Event)---------`);
     console.log(`${bot.user.username} is online.`);
+    config.doSqliteManagement ? require('./../events/sqliteManager.js')() : console.log('SQLITE3 Management is turned off');
     console.log(`Invite Link: https://discordapp.com/oauth2/authorize?client_id=${bot.user.id}&scope=bot&permissions=8 (! Has Administrator Permissions !)`);
     console.log(`---------Finished Verify.js (Ready Event)---------`);
   })

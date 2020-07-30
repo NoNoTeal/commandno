@@ -21,8 +21,8 @@ class guildprefix extends Command {
             syntax: 'guildprefix <prefix|none>',
             description: 'Changes prefix but for a guild.',
             details: 'Change prefix exclusively to a guild. (Type "none" if you want to remove the prefix)',
-
-            userrequires: ['MANAGE_MESSAGES', 'BAN_MEMBERS', 'MANAGE_GUILD'],
+            channelOnly: ['guild'],
+            userRequires: ['MANAGE_MESSAGES', 'BAN_MEMBERS', 'MANAGE_GUILD'],
 
             admin: true,
             reqArgs: true
@@ -34,8 +34,6 @@ class guildprefix extends Command {
      * @param {Discord.Guild} guild
      */
     async run(message, args, guild) {
-        if(guild) {
-            if(!message.member.hasPermission('MANAGE_MESSAGES') || !message.member.hasPermission('BAN_MEMBERS') || !message.member.hasPermission('MANAGE_GUILD')) return message.channel.send(`You cannot set the prefix in this guild.  (Needs \`MANAGE_MESSAGES\`, \`BAN_MEMBERS\`, \`MANAGE_GUILD\`).`);
             if(args[0].toLowerCase() !== "none") {
             message.channel.send(`This guild prefix was changed from \`${message.client.getGuildPrefix.get(guild.id) ? message.client.getGuildPrefix.get(guild.id).prefix : 'none'}\` -> \`${args[0]}\`.`);
             message.client.setGuildPrefix.run({prefix: args[0], guild: guild.id});
@@ -43,7 +41,6 @@ class guildprefix extends Command {
                 message.client.deleteGuildPrefix.run(guild.id);
                 message.channel.send(`The guild prefix was reset.`);
             };
-            } else return message.channel.send(`**This command is meant for guilds only.**`);
     }
 }
 module.exports = guildprefix;

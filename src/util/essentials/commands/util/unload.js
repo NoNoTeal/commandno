@@ -17,10 +17,10 @@ class unload extends Command {
         super(client, {
             name: 'unload',
             group: 'Util',
-            syntax: 'unload <command (aliases supported!)>',
+            syntax: 'unload <Flags: -g, -e> <command (aliases supported!) | -g: group | -e: confirm>',
             cooldown: 5,
             description: 'Unloads a command',
-            details: 'Unloads a command that is unloaded. Guild owners cannot do this.',
+            details: 'Unloads a command that is unloaded. Guild owners cannot do this. Flag -g: Target a group. -e: Target all commands.',
 
             ownerOnly: true,
             private: true,
@@ -34,12 +34,24 @@ class unload extends Command {
      * @param {Discord.Guild} guild
      */
     async run(message, args, guild) {
-        var path = message.client.path.deleted.get(args.join(' ').toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        var check = message.client.path.load.get(args.join(' ').toLowerCase())  || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        if(path) return message.channel.send(`Command / alias \`${args.join(' ')}\` is already unloaded.`);
-        if(!check) return message.channel.send(`Command / alias \`${args.join(' ')}\` can't be found.`);
-        var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
-        Command.unload(message, command);
+        if(args[1]) {
+            switch(args[0].toLowerCase()) {
+                case '-g':
+                    Command.unloadGroup(message, false, args[1]);
+                break;
+                case '-e':
+                    if(args[1].toLowerCase() !== 'confirm') break;
+                    Command.unloadGroup(message, true);
+                break;
+            }
+        } else if(args[0]) {
+            var path = message.client.path.deleted.get(args[0].toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            var check = message.client.path.load.get(args[0].toLowerCase())  || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
+            if(path) return message.channel.send(`Command / alias \`${args[0]}\` is already unloaded.`);
+            if(!check) return message.channel.send(`Command / alias \`${args[0]}\` can't be found.`);
+            Command.unload(message, command);
+        } else return;
     }
 }
 module.exports = unload;

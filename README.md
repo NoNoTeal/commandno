@@ -1,24 +1,31 @@
 # Commandno
 
-Commandno is a crappy version of Discord.JS-Commando but simplified. This is a template for bots if you're way too lazy.
+Commandno is a crappy version of Discord.JS-Commando but simplified. This is a template for bots.
 
 ## Bugs
 
 Go to the issues tracker
 
-## Contributing
+## What comes with it?
 
-Pull Request Shit
+- better-sqlite3 - Storing cooldowns, Guild Commands, and Guild Prefixes.
+- Discord.JS v12.2.0 - Bot brains.
+- node-gyp - better-sqlite3 helper.
+- systeminformation - Helpful for `util`'s `info` command.
 
-## Support
+## Well, what does it do?
 
-you dont
+- Uses `client.path` in order to store commands, so don't let your code conflict with `client.path` or you've mcfucked your command structure.
+- Is a simple wrapper for making commands.
+- Comes with some starter utility commands.
+- Comes with a Utility class for various tasks.
+- Hourly SQLITE3 (Utility only) backups
+- Minutely SQLITE3 Cooldown purges
 
-
-## How to Make a command
+## How to Make a command?
 
 ```js
-var Command = require('../../../util/essentials/Command.js'); //require command
+var Command = require('../../../util/essentials/Command.js'); //require command to extend off of it.
 
 class helloworld extends Command {
     constructor(client) {
@@ -26,133 +33,57 @@ class helloworld extends Command {
             name: 'helloworld', //jsdoc support will help you
         })
     }
-    async run(message) {
+    async run(message, args, guild) {
         message.channel.send('Hello World!')
     }
 }
 module.exports = helloworld;
 ```
 
-## What Options the Command Has
-```js
-   /**
-	* The client that instantiated this. (shortcut)
-    * @type {Discord.Client}
-    * @private
-    */
-    this._client = client;
+## What Options a Command Has
+Option | Required | Short Description | Parameters | Default
+-|-|-|-|-
+`name` | Yes | Names the command. | `string` | `*`
+`group` | No | Shows what group the command is in. | `string` | `None`
+`aliases` | No | Aliases that trigger this command. | `string array` | `null`
+`syntax` | No | Shows how to use a command. | `string` | `No Syntax Provided`
+`cooldown` | No | Ratelimit a command. | `number` | `0`
+~~`guildCooldown`~~ | ~~No~~ | Ratelimit a command in a guild. (Planned feature?) | ~~`number`~~ | ~~`0`~~
+`nsfw` | No | Blocks command from being used inside a SFW channel, or a NSFW channel. | `true` - Only for NSFW use, `false` - Only for SFW use. | `null`
+`reqArgs` | No | Require message to have command arguments. | `boolean` | `null`
+`channelOnly` | No | Requires command to be used in certain channels. |`channelType array` - AKA `guild`, `direct`, `text`, `news` (voice, store, thread, and group DMs are not planning to be supported) | `null`
+`description` | No | Short description of the command. | `string` | `*No Description Provided*`
+`details` | No | Detailed description of the command. | `string` | `*No Details Provided*`
+`requires` | No | What permissions this bot needs to run the command. |`PermissionType array` - AKA any permission type, use `true` as the first item of the array to show that the bot requires all listed permissions. | `null`
+`userRequires` | No | What permissions the user needs to run the command. |`PermissionType array` - AKA any permission type, use `true` as the first item of the array to show that the user requires all listed permissions. | `null`
+`private` | No | Prevents command from being discovered in the help menu. | `boolean` | `null`
+`admin` | No | Prevents command from being loaded, unloaded, reloaded, guild unloaded, or guild loaded. | `boolean` | `null`
+`fallback` | No | If an invalid command is supplied by the user, then it'll run this command. | `boolean` | `null`
+`ownerOnly` | No | If the command is to be used by the owner only. | `boolean` | `null`
 
-   /**
-    * Name of command
-    * @type {string}
-    * @example helloworld
-    */
-   this.name = info.name;
+## What Options a Config Has
+Option | Required | Short Description | Parameter | Default
+-|-|-|-|-
+token | Yes | Logs into bot. | Bot Token | `*`
+owners | No | Allows users to do `ownerOnly` commands. | User IDs | `*`
+prefixes | Yes | A short amount of characters before the command. | `string array` | *
+srcDirname | Yes | A directory where you put your commands in. | `string` | `xteal`
+doSqliteManagement | No | An option to toggle hourly backups and minutely cooldown purges | `boolean` | `true`
 
-   /**
-    * Group the command is in
-    * @type {string}
-    * @example Test Group
-    */
-   this.group = info.group || 'None';
-
-   /**
-    * Aliases associated to the command
-    * @type {?string[]}
-    * @example ['hw', 'hiworld']
-    */
-   this.aliases = info.aliases;
-
-   /**
-    * Syntax of command
-    * @type {?string}
-    * @example helloworld
-    */
-   this.syntax = typeof info.syntax === 'string' && info.syntax.length ? info.syntax : 'No Syntax Provided';
-
-   /**
-    * Command's cooldown (in seconds, not milliseconds)
-    * @type {number}
-    * @example 5
-    */
-   this.cooldown = info.cooldown;
-
-   /**
-    * If the command should be used only inside or only outside of NSFW channels.
-    * @type {boolean} True = Only in NSFW channels, False = Only outside of NSFW Channels. Null = Can be used in either.
-    * @example false
-    */
-   this.nsfw = typeof info.nsfw === 'boolean' ? info.nsfw : null;
-
-   /**
-    * If the command always needs arguments
-    * @type {boolean} 
-    * @example false
-    */
-   this.reqArgs = info.reqArgs;
-
-   /**
-    * Supply a type of channel this can only be used in. Do not mistake this for a boolean, this is a array.
-    * @type {?channelType[]}
-    * @example ['guild', 'direct', 'text', 'news']
-    */
-   this.channelOnly = info.channelOnly;
-
-   /**
-    * A short description of the command
-    * @type {string}
-    * @example Prints "Hello world" in your console!
-    */
-   this.description = typeof info.description === 'string' ? info.description.length ? info.description.length < 100 ? info.description : '*No Description Provided*' : '*No Description Provided*' : '*No Description Provided*'
-
-   /**
-    * A long description of the command
-    * @type {?string}
-    */
-   this.details = typeof info.details === 'string' ? info.details.length ? info.details.length < 100 ? info.details : '*No Details Provided*' : '*No Details Provided*' : '*No Details Provided*'
-
-   /**
-    * Permissions the bot needs in order to run
-    * @type {?PermissionType[]}
-    * @example ['SEND_MESSAGES'] (although bot checks beforehand if it can send messages, etc.)
-    */
-   this.requires = info.requires;
-
-   /**
-    * Permissions the user needs in order to run this command
-    * @type {?PermissionType[]}
-    * @example ['VIEW_CHANNEL'] (although bot checks beforehand if it can send messages, etc.)
-    */
-   this.userrequires = info.userrequires;
-
-   /**
-    * If command cannot be discovered from the help menu
-    * @type {boolean}
-    * @example false
-    */
-   this.private = info.private;
-
-   /**
-    * If this command is ranked admin (it cannot be unloaded or loaded.)
-    * @type {boolean}
-    * @example false
-    */
-   this.admin = info.admin;
-
-   /**
-    * If this command is a fallback command when a user executes a command that the bot doesn't have. Setting multiple fallback commands is possible but isn't recommended.
-    * @type {boolean}
-    * @example false
-    */
-   this.fallback = info.fallback;
-
-   /**
-    * If only the bot owners in the config can use this.
-    * @type {boolean}
-    * @example true
-    */
-   this.ownerOnly = info.ownerOnly;
-```
-
-
-#### K, enjoy, also /src/util/config.json
+## Util Commands
+Name | Function | Usage | Flags
+-|-|-|-
+`eval` | Evaluate Javascript Code. | `eval <*>` | ownerOnly, private, admin
+`guildload` | Loads guild-unloaded command into guild. | `guildload <-g, -e> <group / name>` | reqArgs, admin
+`guildprefix` | Assigns unique prefix to guild. | `guildprefix <prefix|none>` | reqArgs, admin
+`guildunload` | Unloads command, guild specific. | `guildunload <-g, -e> <group / name>` | reqArgs, admin
+`help` | Shows details about a command. | `help <command>` | None
+`info` | Show technical bot details... | `No Syntax` | None
+`kill` | Kills bot. | `kill <reason>` | ownerOnly, private, admin
+`load` | Globally loads command. | `load <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
+`lookup` | Lookup any user via ID. | `lookup <userID>` | admin, reqArgs
+`maintenance` | Sends bot into ownerOnly use. | `maintenance <-s> <reason>` | ownerOnly, private, admin
+`ping` | Pings the bot | `No Syntax` | admin
+`reload` | Globally reloads command. | `reload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
+`restart` | Restarts bot. | `No Syntax` | ownerOnly, private, admin
+`unload` | Globally unloads command. | `unload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs

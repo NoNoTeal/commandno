@@ -12,7 +12,7 @@
 "use strict";
 const Command = require('./../../Command.js');
 const Discord = require('discord.js');
-const { prefixes } = require('./../../../config.json');
+const { prefixes, srcDirname } = require('./../../../config.json');
 const pkg = require('./../../../../../package.json');
 class help extends Command {
     constructor(client) {
@@ -75,23 +75,26 @@ class help extends Command {
         /**
          * @param {Command} command 
          */
-        function trunicator(command) {
+        function shortener(command, phase) {
             var str = '';
             str+=`**Description**: ${command.description}\n`;
             str+=`**Group**: ${command.group}\n`;
             str+=`**Cooldown**: ${cooldown(command)}\n`;
+            str+=`**State**: ${phase}\n`;
             return str;
         }
 
-        var commands = message.client.path.load.array()
+        var commands = message.client.path.load;
+        var filenames = message.client.path.filename;
+        var unloaded = message.client.path.deleted;
         var C = 15
     
         if(!args.length) {
-    
-            if(isNaN(C)) { C = 15 }
-            if(C > 23) { C = 15 }
-            if(C < 5) { C = 15 }
-        
+        /**
+         * 
+         * @param {Discord.Collection} json 
+         * @param {Number} cpp 
+         */
           const commandList = (json, cpp=parseInt(C)) => {
                 let counter = 0,
                 pages = 0, 
@@ -99,8 +102,9 @@ class help extends Command {
                 embed = [],
                 p = {},
                 eF = {},
-                keys = Object.keys(json),
-                fc = 0
+                keys = Object.keys(json.array()),
+                fc = 0,
+                cmdnames = [...json.keys()];
         
               embed[groupKey] = new Discord.MessageEmbed()
               .setTitle(`**${message.client.user.username}** Commands`)
@@ -108,9 +112,17 @@ class help extends Command {
               .addField(`**Prefixes**`, `${Array.isArray(prefixes) ? prefixes.join(', ') : '-'}`)
               .setTimestamp()
               p[groupKey] = embed[groupKey]
-              embed[groupKey].setFooter(`Page ${groupKey.slice(4)}/${Math.ceil(keys.length / cpp)}`, message.author.avatarURL())
-              return Object.keys(json).reduce((final, key) => {
-        
+              embed[groupKey].setFooter(`Page ${groupKey.slice(4)}/${Math.floor(keys.length / cpp)}`, message.author.avatarURL())
+              return cmdnames.reduce((final, key) => {
+                  var loadedCmd = commands.get(key);
+                  var unloadedCmd = unloaded.get(key);
+                  var finalCmd = loadedCmd ? loadedCmd : unloadedCmd;
+                  var type = loadedCmd ? `Loaded` : `Unloaded`;
+                  var guildStatus = message.client.getGuildCommand.get(message.guild.id, key.toLowerCase());
+                  if(guildStatus) {
+                  if(guildStatus.disabled == 1) {
+                      type += `, Guild Disabled`;
+                  }}
                   if(counter === cpp) {
                   counter = 0
                   groupKey = `page${++pages}`
@@ -121,13 +133,13 @@ class help extends Command {
                   .addField(`**Prefixes**`, `${Array.isArray(prefixes) ? prefixes.join(', ') : '-'}`)
                   .setTimestamp()
         
-                  embed[groupKey].setFooter(`Page ${groupKey.slice(4)}/${Math.ceil(keys.length / cpp)}`, message.author.avatarURL())
+                  embed[groupKey].setFooter(`Page ${groupKey.slice(4)}/${Math.floor(keys.length / cpp)}`, message.author.avatarURL())
                 }
-                if(json[key].private !== true) {
-                embed[groupKey].addField(`${json[key].syntax === 'No Syntax Provided' ? json[key].name : json[key].syntax}`, `${trunicator(json[key])}`, true)
-                final[groupKey] = embed[groupKey]
-                eF[groupKey] = embed[groupKey]
-                counter++
+                if(finalCmd.private !== true) {
+                    embed[groupKey].addField(`${finalCmd.syntax === 'No Syntax Provided' ? finalCmd.name : finalCmd.syntax}`, `${shortener(finalCmd, type)}`, true)
+                    final[groupKey] = embed[groupKey]
+                    eF[groupKey] = embed[groupKey]
+                    counter++
                 }
                 fc++
                 if(fc !== keys.length) { return final }
@@ -201,7 +213,7 @@ class help extends Command {
                    }, 60000);
               
               })}
-              commandList(commands) 
+              commandList(filenames) 
         } else {
     var tempbed = '*No Command Found*'
     var cmd = message.client.path.load.get(args.join(' ')) || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
@@ -235,8 +247,8 @@ class help extends Command {
     if (typeof cmd.requires !== 'undefined') {
         tempbed.addField('**Permissions**', `${cmd.requires.join('`, ').slice(0, 128)}`, true);
     }
-    if (typeof cmd.userrequires !== 'undefined') {
-        tempbed.addField('**User Permissions**', `${cmd.userrequires.join('`, ').slice(0, 128)}`, true);
+    if (typeof cmd.userRequires !== 'undefined') {
+        tempbed.addField('**User Permissions**', `${cmd.userRequires.join('`, ').slice(0, 128)}`, true);
     }
     if (typeof cmd.private !== 'undefined') {
         tempbed.addField('**Private**', cmd.private ? 'Yes' : 'No', true);
@@ -247,6 +259,7 @@ class help extends Command {
     if (typeof cmd.ownerOnly !== 'undefined') {
         tempbed.addField('**Owner Only**', cmd.ownerOnly ? 'Yes' : 'No', true);
     }
+    tempbed.addField(`**Directory: group/file.js**`, message.client.path.filename.get(cmd.name.toLowerCase()).split(`./src/${srcDirname}/commands/`).join(``), true);
     message.channel.send(tempbed)
     }}
 }

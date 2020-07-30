@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const PermissionFlags = Object.keys(Discord.Permissions.FLAGS);
-const { prefixes, owners } = require('./../config.json');
+const { prefixes, owners, srcDirname } = require('./../config.json');
 const fs = require('fs');
 const Util = require('./Util');
 class Command {
@@ -37,7 +37,7 @@ class Command {
      * @property {string} description Short description of the command.
      * @property {string} details Long description of the command.
      * @property {PermissionType[]} requires Permissions the client requires. (Put "true" as the first item if the bot needs to have all permissions listed)
-     * @property {PermissionType[]} userrequires Permissions the executor requires. (Put "true" as the first item if the user needs to have all permissions listed)
+     * @property {PermissionType[]} userRequires Permissions the executor requires. (Put "true" as the first item if the user needs to have all permissions listed)
      * @property {boolean} private If the command is hidden from the help command,
      * @property {boolean} admin If the command cannot be disabled.
      * @property {boolean} fallback If the command is executed if a unknown command is sent,
@@ -147,7 +147,7 @@ class Command {
     * @type {?PermissionType[]}
     * @example ['VIEW_CHANNEL'] (although bot checks beforehand if it can send messages, etc.)
     */
-   this.userrequires = info.userrequires;
+   this.userRequires = info.userRequires;
 
    /**
     * If command cannot be discovered from the help menu
@@ -195,7 +195,7 @@ class Command {
     * @param {string} reason 
     * @param {object | string | boolean | number} response
     * @param {Command} info 
-    * @returns {null}
+    * @returns {void}
     * @static
     * @private
     */
@@ -237,7 +237,7 @@ class Command {
 
                 Util.automsg(`To use the \`${info.name}\` command, this bot needs more permissions to do this! ***Needs ${response[0] ? 'all' : 'some'} of the permissions: \`${response[1].join(', ').slice(0, 1500)}\`***`, msg, 20);
             return;
-            case 'userrequires':
+            case 'userRequires':
                 Util.automsg(`To use the \`${info.name}\` command, you need more permissions to do this! ***Needs ${response[0] ? 'all' : 'some'} of the permissions: \`${response[1].join(', ').slice(0, 1500)}\`***`, msg, 20);
             return;
             case 'admin':
@@ -252,66 +252,111 @@ class Command {
             case 'guildDisabled':
                 Util.automsg(`The \`${info.name}\` command is currently disabled in this guild by \`${response}\`.`, msg, 10);
             return;
-
-            case 'guildToggle-NoPerm':
-                Util.automsg(`You cannot ${response == 0 ? 'disable' : 'enable'} commands in this guild. Needs \`MANAGE_MESSAGES\`, \`BAN_MEMBERS\`, \`MANAGE_GUILD\`.`, msg, 10);
-            return;
-            case 'guildToggle-Already':
-                Util.automsg(`The \`${info.name}\` command is already ${response[0] == 0 ? 'disabled' : 'enabled'} in this guild ${response[1] ? `by user \`${response[1]}\`` : 'by default'}.`, msg, 10);
-            return;
             case 'custom':
                 Util.automsg(`${info[0]}`, msg, info[1]);
             return;
         };
     };
+
     /**
      * Unloads command
      * @param {Discord.Message} msg
      * @param {Command} command
+     * @param {Boolean} silent
      * @static
      */
-    static unload(msg, command) {
+    static unload(msg, command, silent) {
         var client = msg.client;
         if(command.prototype instanceof Command) {
         command = new command(msg.client);
-        if(command.admin) return msg.channel.send('Provided command cannot be unloaded.');
+        if(command.admin) return Util.silentMessage(msg, 'Provided command cannot be unloaded.', silent);
         try{
         delete require.cache[require.resolve(client.path.filename.get(command.name.toLowerCase()).replace('src', '../..'))];
         client.path.deleted.set(command.name.toLowerCase(), client.path.load.get(command.name.toLowerCase()));
         client.path.load.delete(command.name.toLowerCase());
-        return msg.channel.send(`Command \`${command.name}\` was unloaded.`);
-        } catch (e) {console.error(e); msg.channel.send(`An error has occurred. Check \`console\` for details.`)}
-        } else return msg.channel.send('Provided command is not a command.');
-    }
+        return Util.silentMessage(msg, `Command \`${command.name}\` was unloaded.`, silent);
+        } catch (e) {console.error(e); Util.silentMessage(msg, `An error has occurred. Check \`console\` for details.`, silent);}
+        } else return Util.silentMessage(msg, 'Provided command is not a command.', silent);
+    };
+
+    /**
+     * Unloads a whole group, calls unload() function.
+     * @param {Discord.Message} msg 
+     * @param {Boolean} everything
+     * @param {String} group 
+     */
+    static unloadGroup(msg, everything, group) {
+        var searchDir = `./src/${srcDirname}/commands/`;
+        !everything ? searchDir+=`${group}/` : ``;
+        if(!fs.existsSync(searchDir)) return msg.channel.send('Invalid Directory');
+
+        var paths = !everything ? Util.getLayerOfFiles(searchDir, null, '.js') : Util.getAllFiles(searchDir, null, '.js');
+        for(var path of paths) {
+            var cmd = require(`${path.replace('src', '../..')}`);
+            if(cmd.prototype instanceof Command) {
+                var cmdInfo = new cmd(msg.client);
+                if(!msg.client.path.filename.get(cmdInfo.name.toLowerCase())) msg.client.path.filename.set(cmdInfo.name.toLowerCase(), path)
+                Command.unload(msg, cmd, true);
+            } else continue;
+        };
+        msg.channel.send(`Unloaded ${everything ? 'everything' : `group: \`${group}\``}`);
+    };
+
     /**
      * Loads command
      * @param {Discord.Message} msg
      * @param {Command} command
+     * @param {Boolean} silent
      * @static
      */
-    static load(msg, command) {
+    static load(msg, command, silent) {
         var client = msg.client;
         if(command.prototype instanceof Command) {
         command = new command(client);
-        if(command.admin) return msg.channel.send('Provided command cannot be loaded.');
+        if(command.admin) return Util.silentMessage(msg, 'Provided command cannot be loaded.', silent);
         try{
         client.path.load.set(command.name.toLowerCase(), client.path.deleted.get(command.name.toLowerCase()));
         client.path.deleted.delete(command.name.toLowerCase());
-        return msg.channel.send(`Command \`${command.name}\` was loaded.`);
-        } catch (e) {console.error(e); msg.channel.send(`An error has occurred. Check \`console\` for details.`)}
-        } else return msg.channel.send('Provided command is not a command.');
-    }
+        return Util.silentMessage(msg, `Command \`${command.name}\` was loaded.`, silent);
+        } catch (e) {console.error(e); Util.silentMessage(msg, `An error has occurred. Check \`console\` for details.`, silent);}
+        } else return Util.silentMessage(msg, 'Provided command is not a command.', silent);
+    };
+
+    /**
+     * Loads a whole group, calls load() function.
+     * @param {Discord.Message} msg 
+     * @param {Boolean} everything
+     * @param {String} group 
+     */
+    static loadGroup(msg, everything, group) {
+        var searchDir = `./src/${srcDirname}/commands/`;
+        !everything ? searchDir+=`${group}/` : ``;;
+        if(!fs.existsSync(searchDir)) return msg.channel.send('Invalid Directory');
+
+        var paths = !everything ? Util.getLayerOfFiles(searchDir, null, '.js') : Util.getAllFiles(searchDir, null, '.js');
+        for(var path of paths) {
+            var cmd = require(`${path.replace('src', '../..')}`);
+            if(cmd.prototype instanceof Command) {
+                var cmdInfo = new cmd(msg.client);
+                if(!msg.client.path.filename.get(cmdInfo.name.toLowerCase())) msg.client.path.filename.set(cmdInfo.name.toLowerCase(), path)
+                Command.load(msg, cmd, true);
+            } else continue;
+        };
+        msg.channel.send(`Loaded ${everything ? 'everything' : `group: \`${group}\``}`);
+    };
+
     /**
      * Reloads command
      * @param {Discord.Message} msg
      * @param {Command} command
+     * @param {Boolean} silent
      * @static
      */
-    static reload(msg, command) {
+    static reload(msg, command, silent) {
         var client = msg.client;
         if(command.prototype instanceof Command) {
         command = new command(msg.client);
-        if(command.admin) return msg.channel.send('Provided command cannot be reloaded.');
+        if(command.admin) return Util.silentMessage(msg, 'Provided command cannot be reloaded.', silent);
         try{
         var path = client.path.filename.get(command.name.toLowerCase()).replace('src', '../..');
         delete require.cache[require.resolve(path)];
@@ -322,46 +367,117 @@ class Command {
             command = new command(client);
             client.path.load.set(command.name.toLowerCase(), command);
             client.path.deleted.delete(command.name.toLowerCase());
-            return msg.channel.send(`Command \`${command.name}\` was reloaded.`);
-        } else return msg.channel.send('Command cache was deleted but new "command" is not a command.');
-        } catch (e) {console.error(e); msg.channel.send(`An error has occurred. Check \`console\` for details.`)}
-    }}
+            return Util.silentMessage(msg, `Command \`${command.name}\` was reloaded.`, silent);
+        } else return Util.silentMessage(msg, 'Command cache was deleted but new "command" is not a command.', silent);
+        } catch (e) {console.error(e); Util.silentMessage(msg, `An error has occurred. Check \`console\` for details.`, silent)}
+    }};
+
+    /**
+     * Reloads a whole group, calls reload() function.
+     * @param {Discord.Message} msg 
+     * @param {Boolean} everything
+     * @param {String} group 
+     */
+    static reloadGroup(msg, everything, group) {
+        var searchDir = `./src/${srcDirname}/commands/`;
+        !everything ? searchDir+=`${group}/` : ``;
+        if(!fs.existsSync(searchDir)) return msg.channel.send('Invalid Directory');
+
+        var paths = !everything ? Util.getLayerOfFiles(searchDir, null, '.js') : Util.getAllFiles(searchDir, null, '.js');
+        for(var path of paths) {
+            var cmd = require(`${path.replace('src', '../..')}`);
+            
+            if(cmd.prototype instanceof Command) {
+            var cmdInfo = new cmd(msg.client);
+            if(!msg.client.path.filename.get(cmdInfo.name.toLowerCase())) msg.client.path.filename.set(cmdInfo.name.toLowerCase(), path)
+            Command.reload(msg, cmd, true);
+            } else continue;
+        };
+        msg.channel.send(`Reloaded ${everything ? 'everything' : `group: \`${group}\``}`);
+    };
+    
     /**
      * Loads command in a guild
      * @param {Discord.Message} msg
      * @param {Command} command
+     * @param {Boolean} silent
      * @returns {?Discord.Message} Discord Message
      */
-    static guildLoad(msg, command) {
+    static guildLoad(msg, command, silent) {
         if(msg.guild) {
-            if(command.admin) return Command.stop(msg, [`\`${command.name}\` is an essential command and cannot be guild loaded.`, 10]);
-        var getter = command._client.getGuildCommand.get(msg.guild.id, command.name.toLowerCase())
-        if(!msg.member.hasPermission('MANAGE_MESSAGES') || !msg.member.hasPermission('BAN_MEMBERS') || !msg.member.hasPermission('MANAGE_GUILD')) return Command.stop(msg, 'guildToggle-NoPerm', 1, command);
-        if(!getter) return Command.stop(msg, 'guildToggle-Already', [1], command);
-        if(getter.disabled == 0) return Command.stop(msg, 'guildToggle-Already', [1, getter.user], command);
-        command._client.setGuildCommand.run({id: `${msg.guild.id}-${command.name.toLowerCase()}`, guild: msg.guild.id, command: command.name.toLowerCase(), disabled: 0, user: `${msg.author.tag} (${msg.author.id})`});
-        msg.channel.send(`The \`${command.name}\` command was guild loaded.`);
-        } else return msg.channel.send(`**This command is meant for guilds only.**`);
-    }
+        if(command.admin) return Util.silentMessage(msg, `\`${command.name}\` is an essential command and cannot be guild loaded.`, silent, [true, 10]);
+        var getter = msg.client.getGuildCommand.get(msg.guild.id, command.name.toLowerCase())
+        if(!msg.member.hasPermission('MANAGE_MESSAGES') || !msg.member.hasPermission('BAN_MEMBERS') || !msg.member.hasPermission('MANAGE_GUILD')) return Util.silentMessage(msg, `You cannot enable commands in this guild. Needs \`MANAGE_MESSAGES\`, \`BAN_MEMBERS\`, \`MANAGE_GUILD\`.`, silent, [true, 10]);
+        if(!getter) return Util.silentMessage(msg, `The \`${command.name}\` command is already enabled in this guild by default.`, silent, [true, 10]);
+        if(getter.disabled == 0) return Util.silentMessage(msg, `The \`${command.name}\` command is already enabled in this guild by ${getter.user}.`, silent, [true, 10]);
+        msg.client.setGuildCommand.run({id: `${msg.guild.id}-${command.name.toLowerCase()}`, guild: msg.guild.id, command: command.name.toLowerCase(), disabled: 0, user: `${msg.author.tag} (${msg.author.id})`});
+        Util.silentMessage(msg, `The \`${command.name}\` command was guild unloaded.`, silent);
+        } else return Util.silentMessage(msg, `This command is for **guilds only**.`, silent);
+    };
     
+    /**
+     * @param {Discord.Message} msg 
+     * @param {Boolean} everything
+     * @param {String} group 
+     */
+    static guildLoadGroup(msg, everything, group) {
+        var searchDir = `./src/${srcDirname}/commands/`;
+        !everything ? searchDir+=`${group}/` : ``;
+        if(!fs.existsSync(searchDir)) return msg.channel.send('Invalid Directory');
+
+        var paths = !everything ? Util.getLayerOfFiles(searchDir, null, '.js') : Util.getAllFiles(searchDir, null, '.js');
+        for(var path of paths) {
+            var cmd = require(`${path.replace('src', '../..')}`);
+            if(cmd.prototype instanceof Command) {
+            cmd = new cmd(msg.client)
+            if(!msg.client.path.filename.get(cmd.name.toLowerCase())) msg.client.path.filename.set(cmd.name.toLowerCase(), path)
+            Command.guildLoad(msg, cmd, true);
+            } else continue;
+        };
+        msg.channel.send(`Guild loaded ${everything ? 'everything' : `group: \`${group}\``}`);
+    };
+
     /**
      * Unloads command in a guild
      * @param {Discord.Message} msg
      * @param {Command} command
+     * @param {Boolean} silent
      * @returns {?Discord.Message} Discord Message
      */
-    static guildUnload(msg, command) {
+    static guildUnload(msg, command, silent) {
         if(msg.guild) {
-        if(command.admin) return Command.stop(msg, [`\`${command.name}\` is an essential command and cannot be guild unloaded.`, 10]);
-        var getter = command._client.getGuildCommand.get(msg.guild.id, command.name.toLowerCase());
-        if(!msg.member.hasPermission('MANAGE_MESSAGES') || !msg.member.hasPermission('BAN_MEMBERS') || !msg.member.hasPermission('MANAGE_GUILD')) return Command.stop(msg, 'guildToggle-NoPerm', 0, command);
+        if(command.admin) return Util.silentMessage(msg, `\`${command.name}\` is an essential command and cannot be guild unloaded.`, silent, [true, 10]);
+        var getter = msg.client.getGuildCommand.get(msg.guild.id, command.name.toLowerCase());
+        if(!msg.member.hasPermission('MANAGE_MESSAGES') || !msg.member.hasPermission('BAN_MEMBERS') || !msg.member.hasPermission('MANAGE_GUILD')) return Util.silentMessage(msg, `You cannot disable commands in this guild. Needs \`MANAGE_MESSAGES\`, \`BAN_MEMBERS\`, \`MANAGE_GUILD\`.`, silent, [true, 10]);
         if(getter) {
-        if(getter.disabled == 1) return Command.stop(msg, 'guildToggle-Already', [0, getter.user], command);
+        if(getter.disabled == 1) return Util.silentMessage(msg, `The \`${command.name}\` command is already disabled in this guild by ${getter.user}.`, silent, [true, 10]);
         }
-        command._client.setGuildCommand.run({id: `${msg.guild.id}-${command.name.toLowerCase()}`, guild: msg.guild.id, command: command.name.toLowerCase(), disabled: 1, user: `${msg.author.tag} (${msg.author.id})`});
-        msg.channel.send(`The \`${command.name}\` command was guild unloaded.`);
-        } else return msg.channel.send(`**This command is meant for guilds only.**`);
-    }
+        msg.client.setGuildCommand.run({id: `${msg.guild.id}-${command.name.toLowerCase()}`, guild: msg.guild.id, command: command.name.toLowerCase(), disabled: 1, user: `${msg.author.tag} (${msg.author.id})`});
+        Util.silentMessage(msg, `The \`${command.name}\` command was guild unloaded.`, silent);
+        } else return Util.silentMessage(msg, `This command is for **guilds only**.`, silent);
+    };
+        
+    /**
+     * @param {Discord.Message} msg 
+     * @param {Boolean} everything
+     * @param {String} group 
+     */
+    static guildUnloadGroup(msg, everything, group) {
+        var searchDir = `./src/${srcDirname}/commands/`;
+        !everything ? searchDir+=`${group}/` : ``;
+        if(!fs.existsSync(searchDir)) return msg.channel.send('Invalid Directory');
+
+        var paths = !everything ? Util.getLayerOfFiles(searchDir, null, '.js') : Util.getAllFiles(searchDir, null, '.js');
+        for(var path of paths) {
+            var cmd = require(`${path.replace('src', '../..')}`);
+            if(cmd.prototype instanceof Command) {
+            cmd = new cmd(msg.client);
+            if(!msg.client.path.filename.get(cmd.name.toLowerCase())) msg.client.path.filename.set(cmd.name.toLowerCase(), path)
+            Command.guildUnload(msg, cmd, true);
+            } else continue;
+        };
+        msg.channel.send(`Guild unloaded ${everything ? 'everything' : `group: \`${group}\``}`);
+    };
 
 	/**
 	 * Checks if the command is executable.
@@ -377,14 +493,14 @@ class Command {
         if(typeof this.cooldown === 'number') {
         if(this._client.getCooldown.get(msg.author.id, this.name.toLowerCase())) {
             if(this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp > Date.now() - this.cooldown * 1000) {
-            let ts = this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp
-            let years = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 365) % 365;
-            let weeks = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 7) % 7;
-            let days = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24) % 24;
-            let hours = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60) % 60;
-            let minutes = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60) % 60;
-            let seconds = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000) % 1000;
-            let times = [
+            let ts = this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp,
+                years = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 365) % 365,
+                weeks = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 7) % 7,
+                days = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24) % 24,
+                hours = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60) % 60,
+                minutes = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60) % 60,
+                seconds = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000) % 1000,
+                times = [
                 `${years <= 0 ? `` : `\`${years}\` **year(s)**`}`,
                 `${weeks <= 0 ? `` : `\`${weeks}\` **week(s)**`}`,
                 `${days <= 0 ? `` : `\`${days}\` **day(s)**`}`,
@@ -406,7 +522,7 @@ class Command {
             !msg.guild.me.hasPermission('EMBED_LINKS')) return
 
             if(Array.isArray(this.requires)) {
-                var needs = this.requires
+                var needs = this.requires;
                 var per = [];
                   if(needs[0] == true) {
                     for(var n of needs) {
@@ -424,23 +540,23 @@ class Command {
                     if(!per.some(p => msg.guild.me.hasPermission(p))) return this.constructor.stop(msg, 'requires', [false, per], this);
                   }
             }
-            if(Array.isArray(this.userrequires)) {
-                var permissions = this.userrequires
-                var per = []
+            if(Array.isArray(this.userRequires)) {
+                var permissions = this.userRequires;
+                var per = [];
                 if(permissions[0] == true) {
                     for(var p of permissions) {
                         if(!PermissionFlags.includes(p)) continue;
                         if(per.includes(p)) continue;
                         per.push(p);
                     }
-                    if(!per.every(p => msg.member.hasPermission(p))) return this.constructor.stop(msg, 'userrequires', [true, per], this);
+                    if(!per.every(p => msg.member.hasPermission(p))) return this.constructor.stop(msg, 'userRequires', [true, per], this);
                 } else {
                     for(var p of permissions) {
                         if(!PermissionFlags.includes(p)) continue;
                         if(per.includes(p)) continue;
                         per.push(p);
                     }
-                    if(!per.some(p => msg.member.hasPermission(p))) return this.constructor.stop(msg, 'userrequires', [false, per], this);
+                    if(!per.some(p => msg.member.hasPermission(p))) return this.constructor.stop(msg, 'userRequires', [false, per], this);
                 }
             }
         }
@@ -498,6 +614,7 @@ class Command {
      * @private
      */
     throttle(author, now = Date.now()) {
+        if(this._client.path.util.maintenance) return;
         var cd = this._client.getCooldown.get(author.id, this.name.toLowerCase());
         if(!cd) {
             cd = {
@@ -513,15 +630,6 @@ class Command {
         return;
     } 
 
-    /**
-     * @param {Array} array 
-     * @param {?} value 
-     * @returns {number}
-     * @static
-     */
-    static countInArray(array, value) {
-        return array.reduce((n, x) => n + (x === value), 0);
-    }
 
     /**
      * Fetches all commands and validates names.
@@ -530,34 +638,23 @@ class Command {
      * @param {boolean} clearAll
      */
     static globalReload(bot, d, clearAll = false) {
+    if(!fs.existsSync(`./src/${d}/commands`)) return;
     if(!fs.readdirSync(`./src/${d}/commands`)) return;
     if(clearAll) {
-        bot.path.load.clear();
-        bot.path.filename.clear();
+        bot.path = {} 
+        bot.path.load = new Discord.Collection();
+        bot.path.filename = new Discord.Collection();
     }
     function find(arr1, arr2) { 
         return arr1.some(r=> arr2.indexOf(r) >= 0);
     }
-    function getAllFiles(dirPath, arrayOfFiles) {
-        var files = fs.readdirSync(dirPath)
-       
-        arrayOfFiles = arrayOfFiles || []
-       
-        files.forEach(function(file) {
-          if (fs.statSync(dirPath + "/" + file).isDirectory()) {
-            arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles)
-          } else {
-            if(!file.endsWith('.js')) return;
-            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
-            arrayOfFiles.push(dirPath + '/' + file)
-          }
-        })
-        return arrayOfFiles;
-      };
-      var paths = getAllFiles(`./src/${d}/commands`);
+      var paths = Util.getAllFiles(`./src/${d}/commands`, null, '.js');
       var names = [];
       var aliases = [];
       for(var path of paths) {
+        if(clearAll) {
+        delete require.cache[require.resolve(path.replace('src', '../..'))];
+        }
         var command = require(`${path.replace('src', '../..')}`);
         if(command.prototype instanceof Command) {
             command = new command(bot);
@@ -573,7 +670,7 @@ class Command {
       };
       if(find(names, aliases)) throw new TypeError(`Command names or aliases cannot match each other.`);
       for(var name of names) {
-        if(this.countInArray(names, name) > 1) throw new TypeError(`Command name ${name} cannot be used more than once.`);
+        if(Util.countInArray(names, name) > 1) throw new TypeError(`Command name ${name} cannot be used more than once.`);
       };
     };
 
@@ -620,13 +717,12 @@ class Command {
             if(info.cooldown < 1) throw new RangeError(`Command(${info.name})'s cooldown is less than required 1 second.`);
             if(info.cooldown > Number.MAX_SAFE_INTEGER) throw new RangeError(`Command(${info.name})'s cooldown is greater than the safest integer.`);
         }
-
-        if(info.nsfw) {
-            if(![true, false, null].includes(info.nsfw)) throw new TypeError(`Command(${info.name})'s option nsfw is not a boolean or null.`);
+        if(!Util.isNull(info.nsfw)) {
+            if(!Util.isBoolean(info.nsfw)) throw new TypeError(`Command(${info.name})'s option nsfw is not a boolean or null.`);
         }
 
-        if(info.reqArgs) {
-            if(![true, false].includes(info.reqArgs)) throw new TypeError(`Command(${info.name})'s option reqArgs is not a boolean.`);
+        if(!Util.isNull(info.reqArgs)) {
+            if(!Util.isBoolean(info.reqArgs)) throw new TypeError(`Command(${info.name})'s option reqArgs is not a boolean.`);
         }
 
         if(info.channelOnly) {
@@ -651,25 +747,25 @@ class Command {
             if(info.requires.length > PermissionFlags.length + 1) throw new TypeError(`Command(${info.name})'s requires cannot be longer than the Permission Flags.`);
         }
 
-        if(info.userrequires) {
-            if(!Array.isArray(info.userrequires)) throw new TypeError(`Command(${info.name})'s userrequires is not a array.`);
-            if(info.userrequires.length > PermissionFlags.length + 1) throw new TypeError(`Command(${info.name})'s userrequires cannot be longer than the Permission Flags.`);
+        if(info.userRequires) {
+            if(!Array.isArray(info.userRequires)) throw new TypeError(`Command(${info.name})'s userRequires is not a array.`);
+            if(info.userRequires.length > PermissionFlags.length + 1) throw new TypeError(`Command(${info.name})'s userRequires cannot be longer than the Permission Flags.`);
         }
 
-        if(info.private) {
-            if(![true, false].includes(info.private)) throw new TypeError(`Command(${info.name})'s private is not a boolean.`);
+        if(!Util.isNull(info.private)) {
+            if(!Util.isBoolean(info.private)) throw new TypeError(`Command(${info.name})'s private is not a boolean.`);
         }
         
-        if(info.admin) {
-            if(![true, false].includes(info.admin)) throw new TypeError(`Command(${info.name})'s admin is not a boolean.`);
+        if(!Util.isNull(info.admin)) {
+            if(!Util.isBoolean(info.admin)) throw new TypeError(`Command(${info.name})'s admin is not a boolean.`);
         }
                 
-        if(info.fallback) {
-            if(![true, false].includes(info.fallback)) throw new TypeError(`Command(${info.name})'s fallback is not a boolean.`);
+        if(!Util.isNull(info.fallback)) {
+            if(!Util.isBoolean(info.fallback)) throw new TypeError(`Command(${info.name})'s fallback is not a boolean.`);
         }
                 
-        if(info.ownerOnly) {
-            if(![true, false].includes(info.ownerOnly)) throw new TypeError(`Command(${info.name})'s ownerOnly is not a boolean.`);
+        if(!Util.isNull(info.ownerOnly)) {
+            if(!Util.isBoolean(info.ownerOnly)) throw new TypeError(`Command(${info.name})'s ownerOnly is not a boolean.`);
         }
     }
 

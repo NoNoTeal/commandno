@@ -1,21 +1,34 @@
-var config = require('./../config.json')
+const { prefixes } = require('./../config.json');
 module.exports = bot => {
-setInterval(() => {
 
-    var randomprefix = config.prefixes[Math.floor(Math.random() * config.prefixes.length)]
+setInterval(() => {
+    if(!bot.path.util.maintenance) {
+    var randomprefix = prefixes[Math.floor(Math.random() * prefixes.length)]
 
     var presences = [
         `for prefix: ${randomprefix} & Use ${randomprefix}help`,
     ]
 
-    bot.presence.set({
-        afk: false,
+    bot.user.setPresence({
         activity: {
             application: {id: bot.user.id},
             type: 3,
             name: presences[Math.floor(Math.random() * presences.length)],
             url: 'https://github.com/nonoteal/',
-        }
+        },
+        status: "online",
     })
+    } else {
+        bot.user.setPresence({
+            activity: {
+                application: {id: bot.user.id},
+                name: "🛠️ Myself being worked on. Not available currently, in maintenance mode.",
+                type: 3,
+                url: 'https://github.com/nonoteal',
+            },
+            status: "dnd",
+        });
+    }
 }, 10000);
+
 }

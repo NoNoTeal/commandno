@@ -34,31 +34,21 @@ class restart extends Command {
      */
     async run(message, args, guild) {
         console.log(`Bot was Restarted by ${message.author.tag} (${message.author.id})`);
-        message.channel.send('🔁 Restarting bot...');
-        message.client.destroy();
-        child_process.exec('npm install', (err, stdo, stde) => {
-            if(err) {
-                console.log(err);
-                process.exit(1);
-            }
-            if(stdo) {
-                console.log(stdo);
-            }
-            if(stde) {
-                console.log(stde);
-            }
-            child_process.exec('node main.js', (err1, stdo1, stde1) => {
-                if(err1) {
-                    console.log(err1);
-                    process.exit(1);
-                }
-                if(stdo1) {
-                    console.log(stdo1);
-                }
-                if(stde1) {
-                    console.log(stde1);
-            }})
-        })
+        await message.channel.send('🔁 Restarting bot...');
+        child_process.exec('npm i', async () => {
+            await message.client.destroy();
+            const miniprocess = child_process.spawn(process.argv[0], process.argv.slice(1), {
+              detached: true, 
+              stdio: ['ignore']
+            })
+            miniprocess.unref();
+            miniprocess.on('message', (d) => {
+              console.log(d);
+            });
+            miniprocess.on('error', (err) => {
+              console.log(err);
+            });
+          });
     }
 }
 module.exports = restart;

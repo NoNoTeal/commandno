@@ -7,5 +7,5 @@ module.exports = bot => {
     bot.on("disconnect", () => reqEvent("disconnecting"))
     bot.on("warn", reqEvent("warn"))
     bot.on("error", reqEvent("error"))
-    bot.on('message', function(msg) {require('./essentials/CommandMessage.js')(msg)})
+    bot.on('message', function(msg) {const CommandMessage = require('./essentials/CommandMessage.js'); new CommandMessage(msg.client, msg)})
 }

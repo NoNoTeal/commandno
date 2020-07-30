@@ -1,8 +1,8 @@
 {
-    "token": "",
-    "id": "",
-    "owners": [""],
-    "prefixes": [""],
+    "token": "TOKEN",
+    "owners": ["YOUR ID HERE"],
+    "prefixes": ["*"],
 
-    "srcDirname": ""
+    "srcDirname": "xteal",
+    "doSqliteManagement": true
 }

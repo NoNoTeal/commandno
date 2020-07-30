@@ -18,10 +18,13 @@ class guildload extends Command {
             name: 'guildload',
             group: 'Util',
             cooldown: 5,
-            syntax: 'guildload <name/alias>',
+            syntax: 'guildload <Flags: -g, -e> <name | alias | -g: group | -e: confirm> ',
             description: 'Loads a command for a guild.',
-            details: 'Loads a command a guild has unloaded..',
+            details: 'Loads a command a guild has unloaded. Flags -g: Target a group. -e: Target all commands.',
+            channelOnly: ['guild'],
+            userRequires: ['MANAGE_MESSAGES', 'BAN_MEMBERS', 'MANAGE_GUILD'],
 
+            reqArgs: true,
             admin: true,
         })
     }
@@ -31,11 +34,23 @@ class guildload extends Command {
      * @param {Discord.Guild} guild
      */
     async run(message, args, guild) {
-        var check = message.client.path.load.get(args.join(' ').toLowerCase()) || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        var deleted = message.client.path.deleted.get(args.join(' ').toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args.join(' ').toLowerCase()));
-        if(!check && !deleted) return message.channel.send('Command doesn\'t exist.');
-        if(!check || deleted) return message.channel.send('Command has to be globally loaded.');
-        Command.guildLoad(message, check);
+        if(args[1]) {
+            switch(args[0].toLowerCase()) {
+                case '-g':
+                    Command.guildLoadGroup(message, false, args[1]);
+                break;
+                case '-e':
+                    if(args[1].toLowerCase() !== 'confirm') break;
+                    Command.guildLoadGroup(message, true);
+                break;
+            }
+        } else if(args[0]) {
+            var check = message.client.path.load.get(args[0].toLowerCase()) || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            var deleted = message.client.path.deleted.get(args[0].toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
+            if(!check && !deleted) return message.channel.send('Command doesn\'t exist.');
+            if(!check || deleted) return message.channel.send('Command has to be globally loaded.');
+            Command.guildLoad(message, check);
+        } else return;
     }
 }
 module.exports = guildload;
