@@ -159,6 +159,7 @@ class Util {
      * @param {String[]} arrayOfFiles 
      */
     static getLayerOfFiles(dirPath, arrayOfFiles, extension) {
+        dirPath = dirPath.split('/').filter(s=>s.length).join('/');
         var files = fs.readdirSync(dirPath)
        
         arrayOfFiles = arrayOfFiles || []
@@ -189,6 +190,7 @@ class Util {
      * @param {String} extension
      */
     static getAllFiles(dirPath, arrayOfFiles, extension) {
+        dirPath = dirPath.split('/').filter(s=>s.length).join('/');
         var files = fs.readdirSync(dirPath)
        
         arrayOfFiles = arrayOfFiles || []

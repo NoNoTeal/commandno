@@ -47,9 +47,9 @@ class load extends Command {
         } else if(args[0]) {
             var path = message.client.path.deleted.get(args[0].toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
             var check = message.client.path.load.get(args[0].toLowerCase()) || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
-            var command = require(message.client.path.filename.get(path.name.toLowerCase()).replace('src', '../../../..'));
             if(check) return message.channel.send(`Command / alias \`${args[0]}\` is already loaded.`);
             if(!path) return message.channel.send(`Command / alias \`${args[0]}\` couldn't be found.`);
+            var command = require(message.client.path.filename.get(path.name.toLowerCase()).replace('src', '../../../..'));
             Command.load(message, command);
         } else return;
         

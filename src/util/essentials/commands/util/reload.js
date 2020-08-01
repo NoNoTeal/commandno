@@ -48,9 +48,9 @@ class reload extends Command {
         } else if(args[0]) {
             var path = message.client.path.deleted.get(args[0].toLowerCase()) || message.client.path.deleted.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
             var check = message.client.path.load.get(args[0].toLowerCase())  || message.client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() === args[0].toLowerCase()));
-            var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
             if(path) return message.channel.send(`Command / alias \`${args[0]}\` has to be loaded.`);
             if(!check) return message.channel.send(`Command / alias \`${args[0]}\` can't be found.`);
+            var command = require(message.client.path.filename.get(check.name.toLowerCase()).replace('src', '../../../..'));
             Command.reload(message, command);
         } else return;
     }

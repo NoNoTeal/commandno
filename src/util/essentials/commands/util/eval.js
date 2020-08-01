@@ -63,7 +63,7 @@ fs.writeFile("Eval.log", evaled,(err) => {
 
             } else {
             embed.setDescription(`OUTPUT \`\`\`xl
-${evaled}\`\`\``)
+${evaled.length ? evaled : 'Nothing'}\`\`\``)
             }
             if(evaled.includes(client.token)) {
               embed.setDescription(`\`OUTPUT\` \`\`\`xl
