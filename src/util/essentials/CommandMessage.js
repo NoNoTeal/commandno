@@ -39,45 +39,24 @@ class CommandMessage {
      * @param {Discord.Message} message 
      */
     static run(client, message) {
-      if(client.path.util.maintenance) {
-        if(!owners.includes(message.author.id)) return;
-      }
-      if(message.guild) {
-        if(client.getGuildPrefix.get(`${message.guild.id}`)) {
-          prefixes.push(client.getGuildPrefix.get(`${message.guild.id}`).prefix);
-        };
-      };
-        if (!prefixes.some(prefix => message.content.toLowerCase().startsWith(prefix.toLowerCase())) || message.author.bot) return;
-        var prefix = prefixes.filter(p => message.content.toLowerCase().startsWith(p.toLowerCase()))[0];
-        var args = message.content.slice(prefix.length).split(/\s+/);
-        var commandName = args.shift().toLowerCase();
-        var command = client.path.load.get(commandName) || client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() == commandName));
+      if(message.author.bot) return;
+        if(client.path.util.maintenance) {
+          if(!owners.includes(message.author.id)) return;
+        }
+        const regex = Util.generateRegex(message);
+        const messageContent = message.content.match(regex);
+        if(!messageContent) return;
+        const args = messageContent.groups.arguments ? messageContent.groups.arguments.split(/\s+/) : [];
+        const prefix = messageContent.groups.prefix.length ? messageContent.groups.prefix : prefixes[0];
+        const command = client.path.load.get(messageContent.groups.command) || client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() == messageContent.groups.command));
         if (!command) {
         if(!client.path.load.array().some(c => c.fallback === true)) return Util.automsg(`That's not a command, see \`${prefix}help\`.`, message, 10);
         for(var cmd of client.path.load.array()) {
           if(cmd.fallback !== true) continue;
-          this.CommandRun(cmd, message);
+          Command.preRunner(cmd, message, args);
         }} else {
-          this.CommandRun(command, message)};
+          Command.preRunner(command, message, args)};
     }
-
-    /**
-     * Runs a command
-     * @param {Command} command
-     * @param {Discord.Message} message
-     * @private
-     */
-    static CommandRun(command, message){    
-      if(command instanceof Command) {
-      if(command.executable(message) !== 'finished') return;
-      command.throttle(message.author);
-      var args = message.content.split(/\s+/).slice(1);
-    try {
-      command.run(message, args, message.guild);
-    } catch (error) {
-      console.error(error);
-      message.react(`⚠️`);
-    }} else return;};
 
     /**
      * Verifies supplied parameters are correct.

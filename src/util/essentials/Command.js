@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const PermissionFlags = Object.keys(Discord.Permissions.FLAGS);
-const { prefixes, owners, srcDirname } = require('./../config.json');
+const { owners, srcDirname, doCooldowns, doOwnerCooldowns, doInBetweenCooldowns } = require('./../config.json');
 const fs = require('fs');
 const Util = require('./Util');
 class Command {
@@ -209,7 +209,6 @@ class Command {
                 Util.automsg(`This command requires args. Syntax: \`${info.syntax}\``, msg, 10);
             return;
             case 'channelOnly':
- 
                 for(var r of response) {
                     if(!['guild','direct','text','news'].includes(r.toLowerCase())) continue;
                     switch(r) {
@@ -234,7 +233,6 @@ class Command {
                 Util.automsg(`Please use the \`${info.name}\` command in a \`${c.join('`, `')}\` channel.`, msg, 10);
             return;
             case 'requires':
-
                 Util.automsg(`To use the \`${info.name}\` command, this bot needs more permissions to do this! ***Needs ${response[0] ? 'all' : 'some'} of the permissions: \`${response[1].join(', ').slice(0, 1500)}\`***`, msg, 20);
             return;
             case 'userRequires':
@@ -248,6 +246,9 @@ class Command {
 			return;
 			case 'cooldown':
 				Util.automsg(`Please wait ${response} before running the \`${info.name}\` command again.`, msg, 10);
+            return;
+            case 'globalCooldown':
+				Util.automsg(`Please wait a moment before running another command again.`, msg, 10);
             return;
             case 'guildDisabled':
                 Util.automsg(`The \`${info.name}\` command is currently disabled in this guild by \`${response}\`.`, msg, 10);
@@ -490,27 +491,34 @@ class Command {
             if(this._client.getGuildCommand.get(msg.guild.id, this.name.toLowerCase()).disabled == 1) return this.constructor.stop(msg, 'guildDisabled', this._client.getGuildCommand.get(msg.guild.id, this.name.toLowerCase()).user, this);
             };
         };
-        if(typeof this.cooldown === 'number') {
-        if(this._client.getCooldown.get(msg.author.id, this.name.toLowerCase())) {
+        if(doCooldowns || doOwnerCooldowns || doInBetweenCooldowns) {
+            if(!doOwnerCooldowns && owners.includes(msg.author.id));
+            else {
+            if(typeof this.cooldown === 'number') {
+            if(this._client.getCooldown.get(msg.author.id, this.name.toLowerCase())) {
             if(this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp > Date.now() - this.cooldown * 1000) {
-            let ts = this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp,
-                years = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 365) % 365,
-                weeks = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24 / 7) % 7,
-                days = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60 / 24) % 24,
-                hours = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60 / 60) % 60,
-                minutes = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000 / 60) % 60,
-                seconds = Math.trunc((ts - (Date.now() - this.cooldown * 1000)) / 1000) % 1000,
+            let ts = (this._client.getCooldown.get(msg.author.id, this.name.toLowerCase()).timestamp - (Date.now() - this.cooldown * 1000)),
+                years = Math.trunc(ts / 1000 / 60 / 60 / 24 / 365) % 365,
+                weeks = Math.trunc(ts / 1000 / 60 / 60 / 24 / 7) % 7,
+                days = Math.trunc(ts / 1000 / 60 / 60 / 24) % 24,
+                hours = Math.trunc(ts / 1000 / 60 / 60) % 60,
+                minutes = Math.trunc(ts / 1000 / 60) % 60,
+                seconds = Math.trunc(ts / 1000 ) % 60,
                 times = [
-                `${years <= 0 ? `` : `\`${years}\` **year(s)**`}`,
-                `${weeks <= 0 ? `` : `\`${weeks}\` **week(s)**`}`,
-                `${days <= 0 ? `` : `\`${days}\` **day(s)**`}`,
-                `${hours <= 0 ? `` : `\`${hours}\` **hour(s)**`}`,
-                `${minutes <= 0 ? `` : `\`${minutes}\` **minute(s)**`}`,
-                `${seconds <= 0 ? `` : `\`${seconds}\` **second(s)**`}`,
+                `${years <= 0 ? `` : `\`${years}\` **year${years > 1 ? 's' : ''}**`}`,
+                `${weeks <= 0 ? `` : `\`${weeks}\` **week${weeks > 1 ? 's' : ''}**`}`,
+                `${days <= 0 ? `` : `\`${days}\` **day${days > 1 ? 's' : ''}**`}`,
+                `${hours <= 0 ? `` : `\`${hours}\` **hour${hours > 1 ? 's' : ''}**`}`,
+                `${minutes <= 0 ? `` : `\`${minutes}\` **minute${minutes > 1 ? 's' : ''}**`}`,
+                `${seconds <= 0 ? `` : `\`${seconds}\` **second${seconds > 1 ? 's' : ''}**`}`,
             ].filter(i => i.length).join(', ');
             times = times.length ? times : `a moment`;
-            return this.constructor.stop(msg, 'cooldown', `${times}`, this)};
-        }}
+            return this.constructor.stop(msg, 'cooldown', `${times}`, this)}}};
+            if(doInBetweenCooldowns && this._client.path.util.inBetweenCooldowns instanceof Discord.Collection) {
+                if(this._client.path.util.inBetweenCooldowns.get(msg.author.id) > Date.now() - 1000) return this.constructor.stop(msg, 'globalCooldown');
+                else this._client.path.util.inBetweenCooldowns.set(msg.author.id, Date.now());
+            }}
+        }
         if(this.ownerOnly === true) {
 			if(!owners.includes(msg.author.id)) return this.constructor.stop(msg, 'ownerOnly', null, this)
 		}
@@ -597,14 +605,32 @@ class Command {
             }
         }
         if(this.reqArgs) {
-            var prefix = prefixes.filter(p => msg.content.toLowerCase().startsWith(p.toLowerCase()))[0];
-            var name = msg.content.slice(prefix.length).split(/\s+/).shift();
-            if(!msg.content.split(`${prefix}${name}`).join(' ').split(/\s+/).slice(1)[0].length) return this.constructor.stop(msg, 'reqArgs', null, this)
+            var messageContent = msg.content.match(Util.generateRegex(msg)).groups;
+            if(!messageContent.arguments) return this.constructor.stop(msg, 'reqArgs', null, this)
         }
 
         return 'finished';
 
     }
+
+    /**
+     * Runs a command
+     * @param {Command} command
+     * @param {Discord.Message} message
+     * @param {String[]} args
+     * @private
+     * @static
+     */
+    static preRunner(command, message, args){    
+        if(command instanceof Command) {
+        if(command.executable(message) !== 'finished') return;
+        command.throttle(message.author);
+      try {
+        command.run(message, args, message.guild);
+      } catch (error) {
+        console.error(error);
+        message.react(`⚠️`);
+    }} else return;};
 
     /**
      * Cooldown a user.
@@ -615,21 +641,30 @@ class Command {
      */
     throttle(author, now = Date.now()) {
         if(this._client.path.util.maintenance) return;
-        var cd = this._client.getCooldown.get(author.id, this.name.toLowerCase());
-        if(!cd) {
-            cd = {
-                id: `${author.id}-${this.name.toLowerCase()}`,
-                user: author.id,
-                command: this.name.toLowerCase(),
-                timestamp: now
+            if(typeof this.cooldown === "number") {
+            var cd = this._client.getCooldown.get(author.id, this.name.toLowerCase());
+            if(!cd) {
+                cd = {
+                    id: `${author.id}-${this.name.toLowerCase()}`,
+                    user: author.id,
+                    command: this.name.toLowerCase(),
+                    timestamp: now
+                };
+            } else {
+                cd.timestamp = now;
             };
-        } else {
-            cd.timestamp = now
-        }
-        this._client.setCooldown.run(cd);
-        return;
+            this._client.setCooldown.run(cd);
+            };
+            return;
     } 
 
+    /**
+     * Cancels a throttle, recommended for long throttles.
+     * @param {Discord.User} author 
+     */
+    cancelThrottle(author) {
+        this.throttle(author, 0);
+    }
 
     /**
      * Fetches all commands and validates names.
@@ -714,7 +749,7 @@ class Command {
 
         if(info.cooldown) {
             if(typeof info.cooldown !== 'number') throw new RangeError(`Command(${info.name})'s cooldown is not a number.`);
-            if(info.cooldown < 1) throw new RangeError(`Command(${info.name})'s cooldown is less than required 1 second.`);
+            if(info.cooldown < 0) throw new RangeError(`Command(${info.name})'s cooldown is less than a positive integer.`);
             if(info.cooldown > Number.MAX_SAFE_INTEGER) throw new RangeError(`Command(${info.name})'s cooldown is greater than the safest integer.`);
         }
         if(!Util.isNull(info.nsfw)) {

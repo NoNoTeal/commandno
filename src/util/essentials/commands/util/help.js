@@ -43,7 +43,7 @@ class help extends Command {
                 let days = Math.trunc((command.cooldown * 1000) / 1000 / 60 / 60 / 24) % 24;
                 let hours = Math.trunc((command.cooldown * 1000) / 1000 / 60 / 60) % 60;
                 let minutes = Math.trunc((command.cooldown * 1000) / 1000 / 60) % 60;
-                let seconds = Math.trunc((command.cooldown * 1000) / 1000) % 1000;
+                let seconds = Math.trunc((command.cooldown * 1000) / 1000) % 60;
                 let times = [
                     `${years <= 0 ? `` : `\`${years}\` **year(s)**`}`,
                     `${weeks <= 0 ? `` : `\`${weeks}\` **week(s)**`}`,
@@ -87,7 +87,7 @@ class help extends Command {
         var commands = message.client.path.load;
         var filenames = message.client.path.filename;
         var unloaded = message.client.path.deleted;
-        var C = 15
+        var C = 9;
     
         if(!args.length) {
         /**

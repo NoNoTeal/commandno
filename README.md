@@ -21,6 +21,7 @@ Go to the issues tracker
 - Comes with a Utility class for various tasks.
 - Hourly SQLITE3 (Utility only) backups
 - Minutely SQLITE3 Cooldown purges
+- Mixins to inject in YOUR own code at startup!
 
 ## How to Make a command?
 
@@ -69,6 +70,9 @@ owners | No | Allows users to do `ownerOnly` commands. | User IDs | `*`
 prefixes | Yes | A short amount of characters before the command. | `string array` | *
 srcDirname | Yes | A directory where you put your commands in. | `string` | `xteal`
 doSqliteManagement | No | An option to toggle hourly backups and minutely cooldown purges | `boolean` | `true`
+doOwnerCooldowns | No | If bot owners should have cooldowns. | `boolean` | `true`
+doCooldowns | No | (Unrecommended to turn off) If everyone should have cooldowns. | `boolean` | `true`
+doInBetweenCooldowns | No | If there should be waits in between using other commands. | `boolean` | `true`
 
 ## Util Commands
 Name | Function | Usage | Flags
@@ -86,4 +90,5 @@ Name | Function | Usage | Flags
 `ping` | Pings the bot | `No Syntax` | admin
 `reload` | Globally reloads command. | `reload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
 `restart` | Restarts bot. | `No Syntax` | ownerOnly, private, admin
+`spoofCooldown` | Set or clear a user's cooldown. | `spoofCooldown <user> <command> <time? (defaults to Date.now())>` | ownerOnly, private, admin, reqArgs
 `unload` | Globally unloads command. | `unload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs

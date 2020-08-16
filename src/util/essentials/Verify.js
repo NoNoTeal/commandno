@@ -8,7 +8,8 @@ const Command = require('./Command');
  */
 module.exports = bot => {
 
-    require('./../events.js')(bot)
+    require('./../events.js')(bot);
+    require('./Mixin.js')(bot);
     console.log('---------Running Verify.js---------');
     console.log('Validating config');
     if(config.owners.length < 1) {
@@ -37,6 +38,10 @@ module.exports = bot => {
       bot.path.filename = new Discord.Collection();
     if(!config.srcDirname.length) throw new TypeError("srcDirname for config.json cannot be left blank.");
     if(config.srcDirname.toLowerCase() == 'util') throw new TypeError("srcDirname for config.json cannot be named util.");
+    if(typeof config.doCooldowns !== 'boolean') throw new TypeError("doCooldowns for config.json needs to be a boolean.");
+    if(typeof config.doOwnerCooldowns !== 'boolean') throw new TypeError("doOwnerCooldowns for config.json needs to be a boolean.");
+    if(typeof config.doInBetweenCooldowns !== 'boolean') throw new TypeError("doInBetweenCooldowns for config.json needs to be a boolean.");
+
     Command.globalReload(bot, 'util/essentials');
     Command.globalReload(bot, config.srcDirname);
 
@@ -101,6 +106,11 @@ var GuildCommandsSqlite = sqlite(`./src/util/essentials/util-cache/GuildCommands
     }
     bot.getGuildCommand = GuildCommandsSqlite.prepare("SELECT * FROM guildcommands WHERE guild = ? AND command = ?");
     bot.setGuildCommand = GuildCommandsSqlite.prepare("INSERT OR REPLACE INTO guildcommands (id, guild, command, disabled, user) VALUES (@id, @guild, @command, @disabled, @user);");
+
+    if(config.doInBetweenCooldowns) {
+      console.log('Preparing Global Cooldowns');
+      bot.path.util.inBetweenCooldowns = new Discord.Collection();
+    }
 
     console.log('Pending Ready Event')
     console.log(`---------Finished Verify.js---------`);

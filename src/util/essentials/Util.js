@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const fs = require('fs');
-const { owners } = require('./../config.json');
+const { owners, prefixes } = require('./../config.json');
 
 /**
  * A various collection of mostly non-D.JS related things. These functions are used in Command.js, don't delete.
@@ -165,9 +165,7 @@ class Util {
         arrayOfFiles = arrayOfFiles || []
        
         files.forEach(function(file) {
-            if(fs.statSync(dirPath + "/" + file).isDirectory()) return;
-            if(!file.endsWith(extension || "")) return;
-            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(!file.endsWith(extension || "") || file.endsWith(".DS_Store") && !fs.statSync(dirPath + "/" + file).isFile()) return;
             arrayOfFiles.push(dirPath + '/' + file)
         })
         return arrayOfFiles;
@@ -199,8 +197,7 @@ class Util {
           if (fs.statSync(dirPath + "/" + file).isDirectory()) {
             arrayOfFiles = Util.getAllFiles(dirPath + "/" + file, arrayOfFiles, extension)
           } else {
-            if(!file.endsWith(extension || "")) return;
-            if(!fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(!file.endsWith(extension || "") || file.endsWith(".DS_Store") && !fs.statSync(dirPath + "/" + file).isFile()) return;
             arrayOfFiles.push(dirPath + '/' + file)
           }
         })
@@ -237,5 +234,99 @@ class Util {
         return typeof variable === "boolean";
     };
 
+    /**
+     * Escapes any RegExp string.
+     * @param {String} string 
+     */
+    static escapeRegex(string) {
+        return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    };
+
+    /**
+     * Generates a RegEx for handling messages to trigger the bot.
+     * @param {Discord.Message} msg
+     * @returns {RegExp}
+     */
+    static generateRegex(msg) {
+        if(msg.guild) {
+            if(msg.client.getGuildPrefix.get(`${msg.guild.id}`)) {
+                prefixes.push(client.getGuildPrefix.get(`${msg.guild.id}`).prefix);
+            };
+        };
+            var newPrefixes = [];
+            prefixes.forEach(function(prefix, i){newPrefixes[i] = Util.escapeRegex(prefix)});
+            return new RegExp(`^(?<prefix>(${newPrefixes.join('|')}))(?<command>\\w+)\\s?(?<arguments>.*)?`, 'is');
+    }
+
+    /**
+     * Abbreviate a number
+     * @param {Number} number 
+     * @param {Number} maxPlaces 
+     * @param {Boolena} forcePlaces 
+     * @param {'T','B','M','K'} forceLetter 
+     */
+    static abbreviate(number, maxPlaces, forcePlaces, forceLetter) {
+        number = Number(number)
+        forceLetter = forceLetter || false
+        if(forceLetter !== false) {
+          return Util.annotate(number, maxPlaces, forcePlaces, forceLetter)
+        }
+        var abbr
+        if(number >= 1e12) {
+          abbr = 'T'
+        }
+        else if(number >= 1e9) {
+          abbr = 'B'
+        }
+        else if(number >= 1e6) {
+          abbr = 'M'
+        }
+        else if(number >= 1e3) {
+          abbr = 'K'
+        }
+        else {
+          abbr = ''
+        }
+        return Util.annotate(number, maxPlaces, forcePlaces, abbr)
+      }
+      
+    /**
+     * @param {Number} number 
+     * @param {Number} maxPlaces 
+     * @param {Boolean} forcePlaces 
+     * @param {String} abbr 
+     * @private
+     */
+    static annotate(number, maxPlaces, forcePlaces, abbr) {
+
+        var rounded = 0
+        switch(abbr) {
+          case 'T':
+            rounded = number / 1e12
+            break
+          case 'B':
+            rounded = number / 1e9
+            break
+          case 'M':
+            rounded = number / 1e6
+            break
+          case 'K':
+            rounded = number / 1e3
+            break
+          case '':
+            rounded = number
+            break
+        }
+        if(maxPlaces !== false) {
+          var test = new RegExp('\\.\\d{' + (maxPlaces + 1) + ',}$')
+          if(test.test(('' + rounded))) {
+            rounded = rounded.toFixed(maxPlaces)
+          }
+        }
+        if(forcePlaces !== false) {
+          rounded = Number(rounded).toFixed(forcePlaces)
+        }
+        return rounded + abbr
+    }
 };
 module.exports = Util;
