@@ -12,7 +12,7 @@
     "better-sqlite3": "^7.0.1",
     "discord.js": "^12.2.0",
     "node-gyp": "^6.1.0",
-    "systeminformation": "^4.26.5"
+    "systeminformation": "^4.27.11"
   },
   "description": "Crappy Discord.JS Commando Replacement",
   "devDependencies": {},
