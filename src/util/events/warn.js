@@ -1,3 +1,3 @@
-module.exports = () => {
-    console.warn();
+module.exports = (w) => {
+    console.warn(w);
 }

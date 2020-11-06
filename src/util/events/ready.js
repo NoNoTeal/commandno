@@ -22,7 +22,7 @@ setInterval(() => {
         bot.user.setPresence({
             activity: {
                 application: {id: bot.user.id},
-                name: "🛠️ Myself being worked on. Not available currently, in maintenance mode.",
+                name: "🛠️ Maintenance mode.",
                 type: 3,
                 url: 'https://github.com/nonoteal',
             },

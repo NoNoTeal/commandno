@@ -73,22 +73,24 @@ doSqliteManagement | No | An option to toggle hourly backups and minutely cooldo
 doOwnerCooldowns | No | If bot owners should have cooldowns. | `boolean` | `true`
 doCooldowns | No | (Unrecommended to turn off) If everyone should have cooldowns. | `boolean` | `true`
 doInBetweenCooldowns | No | If there should be waits in between using other commands. | `boolean` | `true`
+respondToBadCommands | No | If the bot should respond and delete to commands that don't exist | `boolean` | `true`
 
 ## Util Commands
 Name | Function | Usage | Flags
 -|-|-|-
 `eval` | Evaluate Javascript Code. | `eval <*>` | ownerOnly, private, admin
-`guildload` | Loads guild-unloaded command into guild. | `guildload <-g, -e> <group / name>` | reqArgs, admin
-`guildprefix` | Assigns unique prefix to guild. | `guildprefix <prefix|none>` | reqArgs, admin
-`guildunload` | Unloads command, guild specific. | `guildunload <-g, -e> <group / name>` | reqArgs, admin
+`guildload` | Loads guild-unloaded command into guild. | `guildload <-g, -e> <group/name>` | reqArgs, admin
+`guildprefix` | Assigns unique prefix to guild. | `guildprefix <prefix OR none>` | reqArgs, admin
+`guildunload` | Unloads command, guild specific. | `guildunload <-g, -e> <group/name>` | reqArgs, admin
 `help` | Shows details about a command. | `help <command>` | None
+`imposter` | Run a command under another user. | `imposter <username> <command> <command arguments>` | reqArgs, admin, ownerOnly
 `info` | Show technical bot details... | `No Syntax` | None
 `kill` | Kills bot. | `kill <reason>` | ownerOnly, private, admin
-`load` | Globally loads command. | `load <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
+`load` | Globally loads command. | `load <-g, -e> <group OR command/alias>` | ownerOnly, private, admin, reqArgs
 `lookup` | Lookup any user via ID. | `lookup <userID>` | admin, reqArgs
 `maintenance` | Sends bot into ownerOnly use. | `maintenance <-s> <reason>` | ownerOnly, private, admin
 `ping` | Pings the bot | `No Syntax` | admin
-`reload` | Globally reloads command. | `reload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
+`reload` | Globally reloads command. | `reload <-g, -e> <group OR command/alias>` | ownerOnly, private, admin, reqArgs
 `restart` | Restarts bot. | `No Syntax` | ownerOnly, private, admin
 `spoofCooldown` | Set or clear a user's cooldown. | `spoofCooldown <user> <command> <time? (defaults to Date.now())>` | ownerOnly, private, admin, reqArgs
-`unload` | Globally unloads command. | `unload <-g, -e> <group|command/alias>` | ownerOnly, private, admin, reqArgs
+`unload` | Globally unloads command. | `unload <-g, -e> <group OR command/alias>` | ownerOnly, private, admin, reqArgs

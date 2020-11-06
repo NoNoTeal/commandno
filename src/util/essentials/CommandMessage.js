@@ -1,4 +1,4 @@
-const { prefixes, owners } = require('./../config.json');
+const { prefixes, owners, respondToBadCommands } = require('./../config.json');
 const Discord = require('discord.js');
 const Command = require('./Command');
 const Util = require('./Util');
@@ -50,7 +50,7 @@ class CommandMessage {
         const prefix = messageContent.groups.prefix.length ? messageContent.groups.prefix : prefixes[0];
         const command = client.path.load.get(messageContent.groups.command) || client.path.load.find(cmd => Array.isArray(cmd.aliases) && cmd.aliases.some(alias => alias.toLowerCase() == messageContent.groups.command));
         if (!command) {
-        if(!client.path.load.array().some(c => c.fallback === true)) return Util.automsg(`That's not a command, see \`${prefix}help\`.`, message, 10);
+        if(!client.path.load.array().some(c => c.fallback === true)) return respondToBadCommands ? Util.automsg(`That's not a command, see \`${prefix}help\`.`, message, 10) : undefined;
         for(var cmd of client.path.load.array()) {
           if(cmd.fallback !== true) continue;
           Command.preRunner(cmd, message, args);

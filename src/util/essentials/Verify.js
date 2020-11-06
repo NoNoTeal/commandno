@@ -41,6 +41,7 @@ module.exports = bot => {
     if(typeof config.doCooldowns !== 'boolean') throw new TypeError("doCooldowns for config.json needs to be a boolean.");
     if(typeof config.doOwnerCooldowns !== 'boolean') throw new TypeError("doOwnerCooldowns for config.json needs to be a boolean.");
     if(typeof config.doInBetweenCooldowns !== 'boolean') throw new TypeError("doInBetweenCooldowns for config.json needs to be a boolean.");
+    if(typeof config.respondToBadCommands !== 'boolean') throw new TypeError("respondToBadCommands for config.json needs to be a boolean.");
 
     Command.globalReload(bot, 'util/essentials');
     Command.globalReload(bot, config.srcDirname);

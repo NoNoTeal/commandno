@@ -7,5 +7,6 @@
     "doSqliteManagement": true,
     "doOwnerCooldowns": true,
     "doCooldowns": true,
-    "doInBetweenCooldowns": true
+    "doInBetweenCooldowns": true,
+    "respondToBadCommands": true
 }
