@@ -40,7 +40,10 @@ class load extends Command {
                     Command.loadGroup(message, false, args[1]);
                 break;
                 case '-e':
-                    if(args[1].toLowerCase() !== 'confirm') break;
+                    if(args[1].toLowerCase() !== 'confirm') {
+                        message.channel.send('If you are wanting to load everything... try `load -e confirm`')
+                        break;
+                    }
                     Command.loadGroup(message, true);
                 break;
             }

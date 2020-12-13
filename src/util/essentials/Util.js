@@ -165,7 +165,8 @@ class Util {
         arrayOfFiles = arrayOfFiles || []
        
         files.forEach(function(file) {
-            if(!file.endsWith(extension || "") || file.endsWith(".DS_Store") && !fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(!file.endsWith(extension || "") && !fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(file.endsWith(".DS_Store")) return;
             arrayOfFiles.push(dirPath + '/' + file)
         })
         return arrayOfFiles;
@@ -197,7 +198,8 @@ class Util {
           if (fs.statSync(dirPath + "/" + file).isDirectory()) {
             arrayOfFiles = Util.getAllFiles(dirPath + "/" + file, arrayOfFiles, extension)
           } else {
-            if(!file.endsWith(extension || "") || file.endsWith(".DS_Store") && !fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(!file.endsWith(extension || "") && !fs.statSync(dirPath + "/" + file).isFile()) return;
+            if(file.endsWith(".DS_Store")) return;
             arrayOfFiles.push(dirPath + '/' + file)
           }
         })
@@ -241,6 +243,54 @@ class Util {
     static escapeRegex(string) {
         return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     };
+    /**
+     * Shorten a string.
+     * @param {String} str 
+     * @param {Number} max 
+     */
+    static trim (str, max) {
+      return (str.length > max) ? `${str.slice(0, max - 3)}...` : str;
+    };
+    /**
+     * Makes gradients from colors.
+     * @param {String} colorStart 
+     * @param {String} colorEnd 
+     * @param {Number} colorCount 
+     */
+    static generateColor(colorStart,colorEnd,colorCount){
+      function convertToHex (rgb) {
+        return hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
+      }
+      function hex (c) {
+        var s = "0123456789abcdef";
+        var i = parseInt (c);
+        if (i == 0 || isNaN (c))
+          return "00";
+        i = Math.round (Math.min (Math.max (0, i), 255));
+        return s.charAt ((i - i % 16) / 16) + s.charAt (i % 16);
+      }
+      function convertToRGB (hex) {
+        var color = [];
+        color[0] = parseInt (((hex.charAt(0) == '#') ? hex.substring(1, 7) : hex).substring (0, 2), 16);
+        color[1] = parseInt (((hex.charAt(0) == '#') ? hex.substring(1, 7) : hex).substring (2, 4), 16);
+        color[2] = parseInt (((hex.charAt(0) == '#') ? hex.substring(1, 7) : hex).substring (4, 6), 16);
+        return color;
+      }
+      var start = convertToRGB (colorStart);    
+      var end = convertToRGB (colorEnd);    
+      var length = colorCount;
+      var alpha = 0.0;
+      var gradient = [];
+      for (let i = 0; i < length; i++) {
+        var c = [];
+        alpha += (1.0/length);
+        c[0] = start[0] * alpha + (1 - alpha) * end[0];
+        c[1] = start[1] * alpha + (1 - alpha) * end[1];
+        c[2] = start[2] * alpha + (1 - alpha) * end[2];
+        gradient.push(convertToHex(c));
+      }
+      return gradient;
+    }
 
     /**
      * Gets a user from message.
@@ -253,7 +303,12 @@ class Util {
       var guild = message.guild;
       var user;
       if(guild) {
-        if(args[0]) {
+        if(!args[0]) {
+          user = message.author;
+          if(guild && type.toLowerCase() == "member") {
+            return guild.member(user);
+          } else return user;
+        } else {
           var num=/\d+/i.exec(args.join(' '));
           if(Array.isArray(num)) {
             var id;

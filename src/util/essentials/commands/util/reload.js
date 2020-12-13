@@ -41,7 +41,10 @@ class reload extends Command {
                     Command.reloadGroup(message, false, args[1]);
                 break;
                 case '-e':
-                    if(args[1].toLowerCase() !== 'confirm') break;
+                    if(args[1].toLowerCase() !== 'confirm') {
+                        message.channel.send('If you are wanting to reload everything... try `reload -e confirm`')
+                        break;
+                    }
                     Command.reloadGroup(message, true);
                 break;
             }
