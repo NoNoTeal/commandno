@@ -1,10 +1,14 @@
+const sqlite = require(`better-sqlite3`);
+const fs = require('fs');
 const Discord = require('discord.js');
+const Util = require('./Util');
 /**
  * @param {Discord.Client} bot
  */
 module.exports = bot => {
 
     console.log('---------Running Mixin.js---------');
-    console.log('Use this file to run anything you want at startup, e.g. sqlite tables or a prompt.')
+
     console.log('---------Finished Running Mixin.js---------');
+    
 }

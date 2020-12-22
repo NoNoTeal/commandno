@@ -61,6 +61,7 @@ Option | Required | Short Description | Parameters | Default
 `admin` | No | Prevents command from being loaded, unloaded, reloaded, guild unloaded, or guild loaded. | `boolean` | `null`
 `fallback` | No | If an invalid command is supplied by the user, then it'll run this command. | `boolean` | `null`
 `ownerOnly` | No | If the command is to be used by the owner only. | `boolean` | `null`
+`disabled` | No | If the command should be disabled on startup. | `boolean` | `null`
 
 ## What Options a Config Has
 Option | Required | Short Description | Parameter | Default
@@ -78,6 +79,7 @@ respondToBadCommands | No | If the bot should respond and delete to commands tha
 ## Util Commands
 Name | Function | Usage | Flags
 -|-|-|-
+`commandstatuses` | Advanced help command for owner only. Shows all, and labels commands. | `commandstatuses <command>` | None
 `eval` | Evaluate Javascript Code. | `eval <*>` | ownerOnly, private, admin
 `guildload` | Loads guild-unloaded command into guild. | `guildload <-g, -e> <group/name>` | reqArgs, admin
 `guildprefix` | Assigns unique prefix to guild. | `guildprefix <prefix OR none>` | reqArgs, admin

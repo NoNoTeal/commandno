@@ -4,9 +4,11 @@
     "prefixes": ["*"],
 
     "srcDirname": "xteal",
+    
     "doSqliteManagement": true,
     "doOwnerCooldowns": true,
     "doCooldowns": true,
     "doInBetweenCooldowns": true,
+
     "respondToBadCommands": true
 }
